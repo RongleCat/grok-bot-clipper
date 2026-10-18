@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { Marked } from 'marked';
 import createDOMPurify from 'dompurify';
 import hljs from 'highlight.js/lib/common';
@@ -101,12 +102,12 @@ export function createMarkdownRenderer(window) {
       const toolbar = window.document.createElement('div');
       toolbar.className = 'code-toolbar';
       const label = window.document.createElement('span');
-      label.textContent = language || '文本';
+      label.textContent = language || t('文本');
       const copy = window.document.createElement('button');
       copy.type = 'button';
       copy.dataset.copyCode = '';
-      copy.textContent = '复制';
-      copy.setAttribute('aria-label', '复制代码');
+      copy.textContent = t('复制');
+      copy.setAttribute('aria-label', t('复制代码'));
       toolbar.append(label, copy);
       const pre = code.parentElement;
       pre.replaceWith(wrapper);
@@ -117,7 +118,7 @@ export function createMarkdownRenderer(window) {
       wrapper.className = 'table-scroll';
       wrapper.tabIndex = 0;
       wrapper.setAttribute('role', 'region');
-      wrapper.setAttribute('aria-label', '表格，可横向滚动');
+      wrapper.setAttribute('aria-label', t('表格，可横向滚动'));
       table.replaceWith(wrapper);
       wrapper.append(table);
     }

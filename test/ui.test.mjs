@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom';
 import { build } from 'esbuild';
 import { webcrypto } from 'node:crypto';
 import { indexedDB } from 'fake-indexeddb';
+import { readFile } from 'node:fs/promises';
 const code = (
   await build({
     entryPoints: ['src/ui/app.js'],
@@ -51,7 +52,7 @@ async function ui(path = 'popup.html', seed, options = {}) {
     listeners = [];
   let state = {
     authenticated: true,
-    settings: structuredClone(defaults),
+    settings: { ...structuredClone(defaults), language: options.language || 'zh_CN' },
     account: { id: 'account-a', name: '验收账户' },
     bots: [
       { id: 'one', name: '研究员', avatarShape: 'blob', avatarColor: 'green' },
@@ -73,7 +74,16 @@ async function ui(path = 'popup.html', seed, options = {}) {
     this.dispatchEvent(new w.Event('close'));
   };
   w.matchMedia = () => ({ matches: false, addEventListener() {} });
+  w.fetch = async (url) => {
+    const file = new URL(String(url)).pathname.match(/^\/locales\/([a-zA-Z0-9_]+)\.json$/)?.[1];
+    if (!file) throw Error('Unexpected fixture fetch');
+    const catalog = JSON.parse(
+      await readFile(new URL(`../src/i18n/locales/${file}.json`, import.meta.url), 'utf8'),
+    );
+    return { ok: true, json: async () => catalog };
+  };
   w.chrome = {
+    i18n: { getUILanguage: () => options.browserLanguage || 'zh-CN' },
     storage: {
       session: {
         get: async () => options.savedSideView || {},
@@ -94,6 +104,8 @@ async function ui(path = 'popup.html', seed, options = {}) {
         },
       },
       sendMessage: async (m) => {
+        if (m.type === 'i18n.locale')
+          return { ok: true, value: { language: state.settings.language } };
         calls.push(m);
         const override = await options.onRequest?.(m);
         if (override) return override;
@@ -156,6 +168,7 @@ async function ui(path = 'popup.html', seed, options = {}) {
     w,
     calls,
     listeners,
+    getState: () => structuredClone(state),
     setState: (next) => {
       state = { ...state, ...next };
     },
@@ -572,6 +585,199 @@ test('Firefox shortcut help never attempts to open privileged about URLs', async
     assert.match(t.w.document.querySelector('dialog').textContent, /about:addons/);
     assert.match(t.w.document.querySelector('dialog').textContent, /管理扩展快捷键/);
     assert.equal(opened, 0);
+  } finally {
+    t.close();
+  }
+});
+
+test('English settings localize controls while keeping account and BOT names unchanged', async () => {
+  const t = await ui('app.html?view=settings', undefined, { language: 'en' });
+  try {
+    const doc = t.w.document;
+    assert.equal(doc.documentElement.lang, 'en');
+    assert.equal(doc.querySelector('.settings-title h1').textContent, 'Settings');
+    assert.equal(doc.querySelector('#language').value, 'en');
+    assert.equal(doc.querySelector('#default-bot').textContent.trim(), '研究员');
+    assert.equal(doc.querySelector('#account-name').textContent, '验收账户');
+    const chrome = doc.querySelector('.shell').cloneNode(true);
+    for (const userContent of chrome.querySelectorAll(
+      '#language, .bot-switch, #default-bot, #account-name',
+    ))
+      userContent.remove();
+    assert.doesNotMatch(chrome.textContent, /\p{Script=Han}/u);
+    for (const control of chrome.querySelectorAll('[aria-label], [title], [placeholder]')) {
+      for (const attr of ['aria-label', 'title', 'placeholder'])
+        assert.doesNotMatch(control.getAttribute(attr) || '', /\p{Script=Han}/u);
+    }
+    assert.ok(!t.calls.some((m) => m.type === 'i18n.locale'));
+  } finally {
+    t.close();
+  }
+});
+
+test('language preference persists and changes an open settings screen immediately', async () => {
+  const t = await ui('app.html?view=settings');
+  try {
+    const doc = t.w.document;
+    assert.equal(doc.querySelector('.settings-title h1').textContent, '设置');
+    const language = doc.querySelector('#language');
+    language.focus();
+    language.value = 'en';
+    language.dispatchEvent(new t.w.Event('change', { bubbles: true }));
+    await until(() => doc.querySelector('.settings-title h1').textContent === 'Settings');
+    assert.equal(t.calls.find((m) => m.type === 'settings').patch.language, 'en');
+    assert.equal(t.getState().settings.language, 'en');
+    assert.equal(doc.documentElement.lang, 'en');
+    assert.equal(doc.querySelector('#language').value, 'en');
+    assert.equal(doc.activeElement.id, 'language');
+    assert.equal(doc.querySelector('#default-bot').textContent.trim(), '研究员');
+  } finally {
+    t.close();
+  }
+});
+
+test('Arabic follows browser locale, switches document direction and keeps controls functional', async () => {
+  const t = await ui('popup.html', undefined, { language: 'auto', browserLanguage: 'ar-SA' });
+  try {
+    const doc = t.w.document;
+    assert.equal(doc.documentElement.lang, 'ar');
+    assert.equal(doc.documentElement.dir, 'rtl');
+    assert.ok(doc.querySelector('[data-action="save-page"]'));
+    doc.querySelector('[data-action="pick-bot"]').click();
+    await until(() => doc.querySelectorAll('.bot-row').length === 2);
+    assert.equal(doc.querySelectorAll('.bot-choice').length, 2);
+    assert.match(doc.querySelector('.bot-choice').textContent, /研究员/);
+    assert.ok(doc.querySelector('#bot-search').getAttribute('placeholder'));
+  } finally {
+    t.close();
+  }
+});
+
+test('a language update from another extension view preserves unsaved draft content', async () => {
+  const draft = {
+    id: 'locale-preserve-draft',
+    accountId: 'account-a',
+    botId: 'one',
+    itemIds: [],
+    instruction: '原来的内容',
+    preset: '',
+  };
+  const t = await ui('app.html?view=compose&draft=locale-preserve-draft', [['drafts', draft]]);
+  try {
+    const doc = t.w.document;
+    const input = doc.querySelector('#instruction');
+    input.value = '用户输入 <hello> & café：不要翻译';
+    input.dispatchEvent(new t.w.Event('input', { bubbles: true }));
+    t.setState({ settings: { ...t.getState().settings, language: 'en' } });
+    for (const listener of t.listeners) listener({ type: 'state.changed' });
+    await until(
+      () =>
+        doc.documentElement.lang === 'en' &&
+        doc.querySelector('.page-intro h1')?.textContent === 'Edit draft',
+    );
+    assert.equal(doc.querySelector('#instruction').value, '用户输入 <hello> & café：不要翻译');
+    assert.match(doc.querySelector('.bot-name').textContent, /研究员/);
+    assert.equal(doc.querySelector('.page-intro h1').textContent, 'Edit draft');
+    assert.ok(!t.calls.some((m) => m.type === 'draft.send'));
+  } finally {
+    t.close();
+  }
+});
+
+test('live language changes preserve a chat message and its keyboard selection', async () => {
+  const t = await ui('sidepanel.html');
+  try {
+    const doc = t.w.document;
+    const input = doc.querySelector('#followup');
+    input.value = '尚未发送的内容 <hello>';
+    input.dispatchEvent(new t.w.Event('input', { bubbles: true }));
+    input.focus();
+    input.setSelectionRange(2, 5);
+    t.setState({ settings: { ...t.getState().settings, language: 'en' } });
+    for (const listener of t.listeners) listener({ type: 'state.changed' });
+    await until(
+      () => doc.documentElement.lang === 'en' && doc.querySelector('#followup') !== input,
+    );
+    assert.equal(doc.querySelector('#followup').value, '尚未发送的内容 <hello>');
+    assert.equal(doc.activeElement.id, 'followup');
+    assert.equal(doc.activeElement.selectionStart, 2);
+    assert.equal(doc.activeElement.selectionEnd, 5);
+    assert.equal(doc.querySelector('[data-action="followup"]').disabled, false);
+  } finally {
+    t.close();
+  }
+});
+
+test('a live language change preserves the open BOT picker and search query', async () => {
+  const t = await ui();
+  try {
+    const doc = t.w.document;
+    doc.querySelector('[data-action="pick-bot"]').click();
+    await until(() => doc.querySelectorAll('.bot-row').length === 2);
+    const input = doc.querySelector('#bot-search');
+    input.value = '开发';
+    input.dispatchEvent(new t.w.Event('input', { bubbles: true }));
+    input.focus();
+    t.setState({ settings: { ...t.getState().settings, language: 'en' } });
+    for (const listener of t.listeners) listener({ type: 'state.changed' });
+    await until(
+      () => doc.documentElement.lang === 'en' && doc.querySelector('#bot-search') !== input,
+    );
+    assert.equal(doc.querySelector('#bot-search').value, '开发');
+    assert.equal(doc.querySelectorAll('.bot-row').length, 1);
+    assert.equal(doc.activeElement.id, 'bot-search');
+    assert.equal(doc.querySelector('dialog[open] strong').textContent, 'Select BOT');
+  } finally {
+    t.close();
+  }
+});
+
+test('live language changes preserve unsaved material edits and the save action', async () => {
+  const draft = {
+    id: 'locale-edit-draft',
+    accountId: 'account-a',
+    botId: 'one',
+    itemIds: ['locale-edit-material'],
+    instruction: '',
+    preset: '',
+  };
+  const material = {
+    id: 'locale-edit-material',
+    accountId: 'account-a',
+    title: '用户材料',
+    markdown: '原始正文',
+    attachments: [],
+    warnings: [],
+  };
+  const t = await ui('app.html?view=compose&draft=locale-edit-draft', [
+    ['drafts', draft],
+    ['materials', material],
+  ]);
+  try {
+    const doc = t.w.document;
+    doc.querySelector('[data-edit-material]').click();
+    await until(() => doc.querySelector('#material-editor'));
+    const editor = doc.querySelector('#material-editor');
+    editor.value = '尚未保存的正文 <hello>';
+    editor.focus();
+    editor.setSelectionRange(1, 4);
+    t.setState({ settings: { ...t.getState().settings, language: 'en' } });
+    for (const listener of t.listeners) listener({ type: 'state.changed' });
+    await until(
+      () =>
+        doc.documentElement.lang === 'en' &&
+        doc.querySelector('dialog[open] strong')?.textContent === 'Edit content',
+    );
+    assert.equal(doc.querySelector('#material-editor').value, '尚未保存的正文 <hello>');
+    assert.equal(doc.activeElement.id, 'material-editor');
+    assert.equal(doc.activeElement.selectionStart, 1);
+    assert.equal(doc.querySelector('#save-material').textContent, 'Save');
+    doc.querySelector('#save-material').click();
+    await until(() => !doc.querySelector('dialog[open]'));
+    await until(() => doc.querySelector('.material-body')?.textContent.includes('尚未保存的正文'));
+    doc.querySelector('[data-edit-material]').click();
+    await until(() => doc.querySelector('#material-editor'));
+    assert.equal(doc.querySelector('#material-editor').value, '尚未保存的正文 <hello>');
   } finally {
     t.close();
   }

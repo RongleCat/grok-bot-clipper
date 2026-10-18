@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { installSocialUI } from '../src/social/ui.js';
+import { setLocale } from '../src/i18n/index.js';
 const pause = () => new Promise((r) => setTimeout(r, 180));
 async function until(fn) {
   for (let i = 0; i < 200; i++) {
@@ -11,7 +12,17 @@ async function until(fn) {
   throw Error('Social UI condition timed out');
 }
 function environment(body, url) {
+  setLocale('zh_CN');
   const dom = new JSDOM('<!doctype html>' + body, { url, pretendToBeVisual: true });
+  dom.window.chrome = {
+    i18n: { getUILanguage: () => 'zh-CN' },
+    runtime: {
+      sendMessage: async () => ({
+        ok: true,
+        value: { language: 'zh_CN', resolvedLanguage: 'zh_CN' },
+      }),
+    },
+  };
   dom.window.HTMLElement.prototype.getClientRects = () => [{ x: 0, y: 0, width: 240, height: 100 }];
   return dom;
 }
@@ -823,7 +834,10 @@ test('X chooser capture requests the embedded route and places the shared picker
   );
   const w = dom.window,
     calls = [];
-  w.chrome = { runtime: { getURL: (path) => 'chrome-extension://test/' + path } };
+  w.chrome = {
+    i18n: { getUILanguage: () => 'zh-CN' },
+    runtime: { getURL: (path) => 'chrome-extension://test/' + path },
+  };
   const stop = installSocialUI(w, {
     isTrusted: () => true,
     rpc: async (type, extra) => {
@@ -951,7 +965,10 @@ test('XHS chooser survives native pointer-down dismissal and immediately shows a
   const w = dom.window,
     d = w.document,
     calls = [];
-  w.chrome = { runtime: { getURL: (path) => 'chrome-extension://test/' + path } };
+  w.chrome = {
+    i18n: { getUILanguage: () => 'zh-CN' },
+    runtime: { getURL: (path) => 'chrome-extension://test/' + path },
+  };
   const stop = installSocialUI(w, {
     isTrusted: () => true,
     rpc: async (type, extra) => {
@@ -1131,3 +1148,55 @@ test('X submenu stays attached to its item after loading, viewport changes and p
     w.close();
   }
 });
+
+for (const [language, direction] of [
+  ['en', 'ltr'],
+  ['ar', 'rtl'],
+])
+  test(`localized ${language} website menus preserve native text, BOT names and host language`, async () => {
+    const dom = environment(
+      '<article><a href="/a/status/123"><time>Now</time></a></article><div role="menu"><div role="menuitem">复制链接</div></div>',
+      'https://x.com/a/status/123',
+    );
+    const w = dom.window,
+      d = w.document;
+    d.documentElement.lang = 'zh-CN';
+    d.documentElement.dir = 'ltr';
+    const catalog = JSON.parse(
+      await (
+        await import('node:fs/promises')
+      ).readFile(new URL(`../src/i18n/locales/${language}.json`, import.meta.url), 'utf8'),
+    );
+    w.chrome.i18n.getUILanguage = () => language;
+    w.chrome.runtime.sendMessage = async () => ({
+      ok: true,
+      value: { language, resolvedLanguage: language, catalog },
+    });
+    await (await import('../src/i18n/index.js')).initI18n({ api: w.chrome, document: null });
+    const stop = installSocialUI(w, {
+      isTrusted: () => true,
+      rpc: async () => ({
+        authenticated: true,
+        primary: { id: 'main', name: '用户的 BOT' },
+        favorites: [],
+      }),
+    });
+    try {
+      d.querySelector('[data-grok-social="entry"]').click();
+      await until(() =>
+        d
+          .querySelector('[data-grok-social="panel"]')
+          ?.textContent.includes(catalog['发送给其他 BOT']),
+      );
+      assert.ok(d.querySelector('[data-grok-social="panel"]').textContent.includes('用户的 BOT'));
+      assert.equal(d.querySelector('[data-grok-social="entry"]').dir, direction);
+      assert.equal(d.querySelector('[data-grok-social="panel"]').dir, direction);
+      assert.equal(d.querySelector('[role="menuitem"]').textContent, '复制链接');
+      assert.equal(d.documentElement.lang, 'zh-CN');
+      assert.equal(d.documentElement.dir, 'ltr');
+    } finally {
+      stop();
+      w.close();
+      setLocale('zh_CN');
+    }
+  });

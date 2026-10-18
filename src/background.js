@@ -1,3 +1,4 @@
+import { t, initI18n, getLocale, getCatalog, supportedLocales } from './i18n/index.js';
 import { bodyArchive } from './platform/archive.js';
 import { platformForURL, validateSocialRecord } from './social/records.js';
 import { assembleSocialMaterial } from './social/material.js';
@@ -92,7 +93,7 @@ async function ensureOffscreen() {
       .createDocument({
         url: 'offscreen.html',
         reasons: ['BLOBS'],
-        justification: '处理截图像素、网页附件和 PDF 文字',
+        justification: t('处理截图像素、网页附件和 PDF 文字'),
       })
       .finally(() => {
         offscreenPending = null;
@@ -108,7 +109,11 @@ async function offscreen(message) {
     if (!fn) throw Error('UNKNOWN_OFFSCREEN_ACTION');
     return fn(message);
   }
-  const r = await api.runtime.sendMessage({ target: 'offscreen', ...message });
+  const r = await api.runtime.sendMessage({
+    target: 'offscreen',
+    language: (await settings()).language,
+    ...message,
+  });
   if (!r?.ok) throw Error(r?.error ?? 'IMAGE_PROCESSING_FAILED');
   return r.value;
 }
@@ -116,7 +121,7 @@ async function activeTab() {
   const [tab] = await api.tabs.query({ active: true, lastFocusedWindow: true });
   if (tab && !tab.url?.startsWith(extensionURL(''))) return tab;
   const candidates = (await api.tabs.query({ active: true }))
-    .filter((t) => /^https?:/.test(t.url ?? ''))
+    .filter((tabOrTable) => /^https?:/.test(tabOrTable.url ?? ''))
     .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
   if (candidates[0]) return candidates[0];
   throw Error('TAB_UNAVAILABLE');
@@ -176,7 +181,10 @@ async function toolbar(tab) {
   try {
     tab ??= await activeTab();
     const bot = await route({ url: tab.url, kind: 'page' });
-    await api.action.setTitle({ tabId: tab.id, title: `发送给 ${bot.name || 'BOT'}` });
+    await api.action.setTitle({
+      tabId: tab.id,
+      title: t('发送给 {name}', { name: bot.name || 'BOT' }),
+    });
   } catch {
     await api.action.setTitle({ title: 'Grok Bot Clipper' });
   }
@@ -192,12 +200,12 @@ async function rebuildMenus() {
     s = await settings();
   let target;
   try {
-    const t = await activeTab();
-    target = await route({ url: t.url, kind: 'page' });
+    const tabOrTable = await activeTab();
+    target = await route({ url: tabOrTable.url, kind: 'page' });
   } catch {}
   api.contextMenus.create({
     id: 'send-default',
-    title: target ? `发送给 ${target.name || 'BOT'}` : '发送给 Grok Bot',
+    title: target ? t('发送给 {name}', { name: target.name || 'BOT' }) : t('发送给 Grok Bot'),
     contexts: ['selection', 'image', 'link', 'page', 'video', 'audio'],
   });
   for (const bot of bots.filter((b) => s.favorites.includes(b.id)).slice(0, 5))
@@ -208,17 +216,17 @@ async function rebuildMenus() {
     });
   api.contextMenus.create({
     id: 'choose-bot',
-    title: '选择 BOT…',
+    title: t('选择 BOT…'),
     contexts: ['selection', 'image', 'link', 'page'],
   });
   api.contextMenus.create({
     id: 'add-basket',
-    title: '加入材料篮',
+    title: t('加入材料篮'),
     contexts: ['selection', 'image', 'link', 'page', 'video'],
   });
   api.contextMenus.create({
     id: 'send-note',
-    title: '添加说明后发送…',
+    title: t('添加说明后发送…'),
     contexts: ['selection', 'image', 'link', 'page'],
   });
 }
@@ -230,6 +238,7 @@ async function content(tabId, action, options = {}) {
   }
   const r = await api.tabs.sendMessage(tabId, {
     target: 'content',
+    language: (await settings()).language,
     action,
     ...(action === 'capture' ? { options } : options),
   });
@@ -309,24 +318,24 @@ async function capturePage(tab, { kind = 'page', ...options } = {}) {
     item = {
       id: crypto.randomUUID(),
       kind,
-      title: tab.title || '网页',
+      title: tab.title || t('网页'),
       url: cleanURL(tab.url),
       capturedAt: new Date().toISOString(),
       createdAt: Date.now(),
       markdown: cleanURL(options.linkUrl || tab.url),
       attachments: [],
-      warnings: [errorCode(error) + '：未能读取页面正文'],
+      warnings: [errorCode(error) + t('：未能读取页面正文')],
     };
   }
   item.sourceWindowId = tab.windowId;
   if (item.pageContext) {
-    item.markdown += '\n\n## 页面背景\n\n' + item.pageContext;
+    item.markdown += t('\n\n## 页面背景\n\n') + item.pageContext;
     delete item.pageContext;
   }
-  for (const t of item.tables ?? [])
+  for (const tabOrTable of item.tables ?? [])
     item.attachments.push({
-      name: t.name,
-      blob: new Blob([t.csv], { type: 'text/csv;charset=utf-8' }),
+      name: tabOrTable.name,
+      blob: new Blob([tabOrTable.csv], { type: 'text/csv;charset=utf-8' }),
     });
   if (kind === 'image' && item.image?.url) {
     try {
@@ -348,7 +357,7 @@ async function capturePage(tab, { kind = 'page', ...options } = {}) {
         blob,
       });
     } catch {
-      item.warnings.push('无法获取原图文件，已保留图片出处；可以用截图补充');
+      item.warnings.push(t('无法获取原图文件，已保留图片出处；可以用截图补充'));
     }
   }
   if (kind === 'page' && (/\.pdf(?:[?#]|$)/i.test(tab.url ?? '') || options.pdf)) {
@@ -358,7 +367,7 @@ async function capturePage(tab, { kind = 'page', ...options } = {}) {
         item.attachments.push({ name: safeName(tab.title) + '.pdf', blob });
       }
     } catch {
-      item.warnings.push('PDF 原文件无法下载，已保留来源链接');
+      item.warnings.push(t('PDF 原文件无法下载，已保留来源链接'));
     }
   }
   if (captureOwner !== (await accountId()) || captureWorkspace !== (await workspaceId()))
@@ -372,8 +381,8 @@ async function capturePage(tab, { kind = 'page', ...options } = {}) {
       item = await get('materials', item.id);
       item.warnings.push(
         isFirefox
-          ? 'HTML 正文归档失败，已保留正文和结构化材料'
-          : 'MHTML 归档失败，已保留正文和结构化材料',
+          ? t('HTML 正文归档失败，已保留正文和结构化材料')
+          : t('MHTML 归档失败，已保留正文和结构化材料'),
       );
       await put('materials', item);
     }
@@ -397,7 +406,7 @@ async function capturePage(tab, { kind = 'page', ...options } = {}) {
     try {
       await offscreen({ action: 'pdf', materialId: item.id, index: pdfIndex });
     } catch {
-      item.warnings.push('PDF 文字提取失败，原文件仍包含在附件中');
+      item.warnings.push(t('PDF 文字提取失败，原文件仍包含在附件中'));
       await put('materials', item);
     }
   return await get('materials', item.id);
@@ -408,7 +417,7 @@ async function archive(tabId, materialId) {
     if (!item) throw Error('MATERIAL_UNAVAILABLE');
     item.attachments.push(bodyArchive(item));
     item.warnings ??= [];
-    item.warnings.push('HTML 归档仅保留正文，不包含原网页布局、未加载媒体及完整视频');
+    item.warnings.push(t('HTML 归档仅保留正文，不包含原网页布局、未加载媒体及完整视频'));
     await put('materials', item);
     return true;
   }
@@ -564,7 +573,7 @@ async function enqueue(draft) {
     teamId: bot.teamId,
     workspaceId: draft.workspaceId,
     accountId: owner,
-    title: items[0]?.title || draft.instruction?.slice(0, 80) || '消息',
+    title: items[0]?.title || draft.instruction?.slice(0, 80) || t('消息'),
     itemIds: draft.itemIds,
     packet,
     uploaded: [],
@@ -650,11 +659,11 @@ async function screenshot(tab, mode, options = {}) {
     id: crypto.randomUUID(),
     kind: 'screenshot',
     sourceWindowId: tab.windowId,
-    title: tab.title || '截图',
+    title: tab.title || t('截图'),
     url: cleanURL(tab.url),
     createdAt: Date.now(),
     capturedAt: new Date().toISOString(),
-    markdown: '网页截图',
+    markdown: t('网页截图'),
     accountId: await accountId(),
     warnings: [],
     attachments: [],
@@ -673,7 +682,8 @@ async function screenshot(tab, mode, options = {}) {
     const info = await content(tab.id, 'scroll.prepare'),
       height = Math.min(info.total, s.maxScrollHeight),
       frames = [];
-    if (info.total > height) item.warnings.push(`长截图限制为 ${height} 像素，页面剩余部分未采集`);
+    if (info.total > height)
+      item.warnings.push(t('长截图限制为 {height} 像素，页面剩余部分未采集', { height }));
     try {
       for (let y = 0; y < height; y += info.height) {
         const position = await content(tab.id, 'scroll.to', { y });
@@ -700,7 +710,7 @@ async function screenshot(tab, mode, options = {}) {
       height,
       scale: (await imageSize(frames[0].data)).width / info.width,
     });
-    item.warnings.push('长截图为滚动采集，固定元素和动态内容可能重复');
+    item.warnings.push(t('长截图为滚动采集，固定元素和动态内容可能重复'));
     await put('materials', {
       ...(await get('materials', item.id)),
       warnings: [...new Set([...(await get('materials', item.id)).warnings, ...item.warnings])],
@@ -832,6 +842,11 @@ async function changeSettings(patch) {
   const old = await settings(),
     s = { ...old };
   for (const k of Object.keys(DEFAULT_SETTINGS)) if (Object.hasOwn(patch, k)) s[k] = patch[k];
+  s.language =
+    s.language === 'auto' || supportedLocales.some((locale) => locale.code === s.language)
+      ? s.language
+      : 'auto';
+  await initI18n({ api, locale: s.language, document: null });
   s.maxTextBytes = Math.min(120000, Math.max(4096, Number(s.maxTextBytes) || 48000));
   s.maxAttachmentBytes = Math.min(
     128 * 1024 * 1024,
@@ -915,15 +930,15 @@ async function finishElementCapture(item, tab, options) {
       }
     } catch {
       const saved = await get('materials', item.id);
-      saved.warnings.push('元素截图未能生成，已保留文字内容');
+      saved.warnings.push(t('元素截图未能生成，已保留文字内容'));
       await put('materials', saved);
     }
   }
   const saved = await get('materials', item.id);
-  for (const t of saved.tables ?? [])
+  for (const tabOrTable of saved.tables ?? [])
     saved.attachments.push({
-      name: t.name,
-      blob: new Blob([t.csv], { type: 'text/csv;charset=utf-8' }),
+      name: tabOrTable.name,
+      blob: new Blob([tabOrTable.csv], { type: 'text/csv;charset=utf-8' }),
     });
   await put('materials', saved);
   return createDraft([saved], options);
@@ -967,6 +982,14 @@ const socialService = createSocialService({
 });
 async function handle(message, sender) {
   const isUI = sender.id === api.runtime.id && sender.url?.startsWith(extensionURL(''));
+  if (message.type === 'i18n.locale' && sender.id === api.runtime.id) {
+    await initI18n({ api, locale: (await settings()).language || 'auto', document: null });
+    return {
+      language: (await settings()).language || 'auto',
+      resolvedLanguage: getLocale(),
+      catalog: getCatalog(),
+    };
+  }
   if (!isUI) {
     if (message.type?.startsWith('social.')) {
       if (
@@ -1097,8 +1120,13 @@ async function handle(message, sender) {
     case 'state':
       return state();
     case 'capture.target': {
-      const t = await activeTab();
-      return { id: t.id, windowId: t.windowId, title: t.title, url: cleanURL(t.url) };
+      const tabOrTable = await activeTab();
+      return {
+        id: tabOrTable.id,
+        windowId: tabOrTable.windowId,
+        title: tabOrTable.title,
+        url: cleanURL(tabOrTable.url),
+      };
     }
     case 'login':
       return startLogin();
@@ -1137,7 +1165,8 @@ async function handle(message, sender) {
     case 'team.select': {
       const teams = (await api.storage.local.get('teams')).teams ?? [];
       const id = message.teamId === 'personal' ? undefined : Number(message.teamId);
-      if (id !== undefined && !teams.some((t) => t.id === id)) throw Error('TEAM_UNAVAILABLE');
+      if (id !== undefined && !teams.some((tabOrTable) => tabOrTable.id === id))
+        throw Error('TEAM_UNAVAILABLE');
       if (authTransition) throw Error('ACCOUNT_CHANGED');
       authTransition = true;
       const previous = await credentials();
@@ -1197,15 +1226,21 @@ async function handle(message, sender) {
       const tabs = await api.tabs.query({ currentWindow: true }),
         ids = new Set(message.tabIds ?? []),
         items = [];
-      for (const tab of tabs.filter((t) => ids.has(t.id) && /^https?:/.test(t.url ?? '')))
+      for (const tab of tabs.filter(
+        (tabOrTable) => ids.has(tabOrTable.id) && /^https?:/.test(tabOrTable.url ?? ''),
+      ))
         items.push(await capturePage(tab));
       if (!items.length) throw Error('MATERIAL_REQUIRED');
       return createDraft(items, { forcePrompt: true });
     }
     case 'tabs':
       return (await api.tabs.query({ currentWindow: true }))
-        .filter((t) => /^https?:/.test(t.url ?? ''))
-        .map((t) => ({ id: t.id, title: t.title, url: cleanURL(t.url) }));
+        .filter((tabOrTable) => /^https?:/.test(tabOrTable.url ?? ''))
+        .map((tabOrTable) => ({
+          id: tabOrTable.id,
+          title: tabOrTable.title,
+          url: cleanURL(tabOrTable.url),
+        }));
     case 'basket.compose': {
       const items = (await all('materials')).filter((i) => i.inBasket && i.accountId === owner);
       if (!items.length) throw Error('MATERIAL_REQUIRED');
@@ -1527,6 +1562,7 @@ api.runtime.onConnect.addListener((port) => {
 });
 async function init() {
   await protectStorage();
+  await initI18n({ api, locale: (await settings()).language || 'auto', document: null });
   await api.alarms.create('outbox', { periodInMinutes: 0.5 });
   await api.alarms.create('cleanup', { periodInMinutes: 60 });
   await recover();

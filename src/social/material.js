@@ -1,13 +1,14 @@
+import { t } from '../i18n/index.js';
 import { cleanURL, safeName } from '../core/context.js';
 import { mediaURLAllowed } from './records.js';
 const labels = {
-  likes: '点赞',
-  comments: '评论',
-  reposts: '转帖',
-  quotes: '引用',
-  bookmarks: '收藏',
-  shares: '分享',
-  views: '浏览 / 播放',
+  likes: '点赞', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+  comments: '评论', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+  reposts: '转帖', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+  quotes: '引用', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+  bookmarks: '收藏', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+  shares: '分享', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+  views: '浏览 / 播放', // i18n-exempt: stable source key translated at runtime, preserving live language changes
 };
 export async function downloadSocialMedia(platform, url, maxBytes, { fetchImpl = fetch } = {}) {
   if (!mediaURLAllowed(platform, url)) throw Error('MEDIA_HOST_NOT_ALLOWED');
@@ -196,23 +197,33 @@ export async function assembleSocialMaterial(
         });
       } catch (error) {
         warnings.push(
-          `${kind === 'video' ? '视频' : '图片'} ${i + 1} 未能附加（${error.message}），已保留帖子出处。`,
+          t('{kind} {number} 未能附加（{error}），已保留帖子出处。', {
+            kind: kind === 'video' ? t('视频') : t('图片'),
+            number: i + 1,
+            error: error.message,
+          }),
         );
       }
     }
   }
   if (record.hasVideo && !files.some((f) => f.kind === 'video'))
     warnings.push(
-      '未获取到可下载的完整视频文件。请刷新原页面并打开视频，再重新采集；仅有流媒体播放清单时不会冒充视频附件。',
+      t(
+        '未获取到可下载的完整视频文件。请刷新原页面并打开视频，再重新采集；仅有流媒体播放清单时不会冒充视频附件。',
+      ),
     );
   if (record.captureSource !== 'network' && record.platform !== 'wechat')
     warnings.push(
-      '帖子接口数据尚未捕获，当前内容来自页面；图片可能受懒加载影响，互动数据只包含页面公开显示的部分。',
+      t(
+        '帖子接口数据尚未捕获，当前内容来自页面；图片可能受懒加载影响，互动数据只包含页面公开显示的部分。',
+      ),
     );
   const title =
-    record.title || record.text.split('\n')[0].slice(0, 100) || `${record.platform} 帖子`;
+    record.title ||
+    record.text.split('\n')[0].slice(0, 100) ||
+    t('{platform} 帖子', { platform: record.platform });
   const metrics = Object.entries(record.metrics)
-    .map(([key, value]) => `- ${labels[key] || key}：${value}`)
+    .map(([key, value]) => '- ' + t('{label}：{value}', { label: t(labels[key] || key), value }))
     .join('\n');
   const metadata = {
     platform: record.platform,
@@ -241,14 +252,14 @@ export async function assembleSocialMaterial(
   });
   const markdown = [
     `# ${title}`,
-    `平台：${record.platform}\n作者：${record.author.name || '未公开'}${record.author.handle ? ` (${record.author.handle})` : ''}\n发布时间：${record.publishedAt || '未公开'}\n来源：${cleanURL(record.url)}`,
+    `${t('平台：')}${record.platform}\n${t('作者：')}${record.author.name || t('未公开')}${record.author.handle ? ` (${record.author.handle})` : ''}\n${t('发布时间：')}${record.publishedAt || t('未公开')}\n${t('来源：')}${cleanURL(record.url)}`,
     record.text,
-    record.tags.length ? `## 标签\n\n${record.tags.map((t) => '#' + t).join(' ')}` : '',
-    `## 互动数据（采集时快照）\n\n${metrics || '未获取到公开互动数据。'}\n\n未列出的数据表示未公开或未获取，不能视为 0。`,
+    record.tags.length ? `## ${t('标签')}\n\n${record.tags.map((t) => '#' + t).join(' ')}` : '',
+    `## ${t('互动数据（采集时快照）')}\n\n${metrics || t('未获取到公开互动数据。')}\n\n${t('未列出的数据表示未公开或未获取，不能视为 0。')}`,
     files.length
-      ? `## 媒体附件\n\n${files.map((f) => `- ${f.name}${f.caption ? `：${f.caption}` : ''}`).join('\n')}`
+      ? `## ${t('媒体附件')}\n\n${files.map((f) => `- ${f.name}${f.caption ? `：${f.caption}` : ''}`).join('\n')}`
       : '',
-    warnings.length ? `## 缺失说明\n\n${warnings.map((w) => '- ' + w).join('\n')}` : '',
+    warnings.length ? `## ${t('缺失说明')}\n\n${warnings.map((w) => '- ' + w).join('\n')}` : '',
   ]
     .filter(Boolean)
     .join('\n\n');

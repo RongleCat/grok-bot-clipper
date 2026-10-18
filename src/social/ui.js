@@ -1,3 +1,5 @@
+import { escapeHTML } from '../ui/components.js';
+import { t, initI18n, getLocale, supportedLocales } from '../i18n/index.js';
 import { createShareMenu, anchorShareMenu, createMenuAction as styleAction } from './menu.js';
 import { createEmbeddedPicker } from './embedded-picker.js';
 import { recipientArea, recipientNode, isolateDouyinRecipients } from './recipients.js';
@@ -102,7 +104,7 @@ export function installSocialUI(
     wechatBotId;
   const embeddedPicker = createEmbeddedPicker(window, {
     getURL: (path) => (window.browser?.runtime || window.chrome.runtime).getURL(path),
-    onQueued: () => toast('已加入 BOT 发送队列'),
+    onQueued: () => toast(t('已加入 BOT 发送队列')),
   });
   rpc ||= async (type, extra = {}) => {
     const response = await (window.browser?.runtime || window.chrome.runtime).sendMessage({
@@ -112,11 +114,15 @@ export function installSocialUI(
     if (!response?.ok) {
       const messages = {
         SOCIAL_VIDEO_ENCRYPTED:
-          '仅获取到播放器加密视频，本次未发送。未找到可供 BOT 使用的原始视频文件',
-        SOCIAL_VIDEO_NOT_CAPTURED: '未捕获到视频地址，本次未发送。请刷新小红书页面并播放视频后重试',
-        SOCIAL_VIDEO_DOWNLOAD_FAILED: '视频文件下载失败，本次未发送。请刷新笔记后重试',
+          '仅获取到播放器加密视频，本次未发送。未找到可供 BOT 使用的原始视频文件', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+        SOCIAL_VIDEO_NOT_CAPTURED: '未捕获到视频地址，本次未发送。请刷新小红书页面并播放视频后重试', // i18n-exempt: stable source key translated at runtime, preserving live language changes
+        SOCIAL_VIDEO_DOWNLOAD_FAILED: '视频文件下载失败，本次未发送。请刷新笔记后重试', // i18n-exempt: stable source key translated at runtime, preserving live language changes
       };
-      throw Error(messages[response?.error] || response?.error || 'REQUEST_FAILED');
+      throw Error(
+        (messages[response?.error] ? t(messages[response?.error]) : '') ||
+          response?.error ||
+          'REQUEST_FAILED',
+      );
     }
     return response.value;
   };
@@ -125,11 +131,18 @@ export function installSocialUI(
     target.addEventListener(type, handler, options);
     cleanups.push(() => target.removeEventListener(type, handler, options));
   };
+  function failureMessage(message) {
+    return /^[A-Z][A-Z0-9_]*$/.test(String(message || ''))
+      ? t('操作失败（{code}），请重试', { code: message })
+      : String(message || t('操作失败'));
+  }
   function toast(message) {
+    message = failureMessage(message);
     document.querySelector(`[${own}="status"]`)?.remove();
     const status = document.createElement('div');
     status.setAttribute(own, 'status');
     status.role = 'status';
+    status.dir = supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
     status.textContent = message;
     status.style.cssText =
       'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147483647;max-width:80vw;padding:10px 16px;border-radius:8px;background:#202020;color:white;font:13px/1.6 system-ui;box-shadow:0 3px 16px #0002';
@@ -185,25 +198,25 @@ export function installSocialUI(
         await refreshPostRecords();
         if (disposed) return;
         if (contextForShare(window, null).id !== context.id)
-          throw Error('帖子已切换，请在当前作品重新分享');
+          throw Error(t('帖子已切换，请在当前作品重新分享'));
       }
       const record = extractSocialDOM(window, context, cache);
-      if (!chooseBot) toast('正在采集并发送…');
+      if (!chooseBot) toast(t('正在采集并发送…'));
       const result = await rpc('social.capture', { record, botId, chooseBot, embedded: true });
       if (preparing && !result?.pickerId) embeddedPicker.close();
       if (result?.jobId)
         toast(
           result.warnings?.length
-            ? '已加入发送队列，缺失媒体的说明已附在正文中'
-            : '已加入 BOT 发送队列',
+            ? t('已加入发送队列，缺失媒体的说明已附在正文中')
+            : t('已加入 BOT 发送队列'),
         );
       else if (result?.pickerId) embeddedPicker.open(result.pickerId, preparing);
-      else if (result?.pickerOpened) toast('已打开 BOT 选择窗口');
-      else throw Error('发送未确认，请重试');
+      else if (result?.pickerOpened) toast(t('已打开 BOT 选择窗口'));
+      else throw Error(t('发送未确认，请重试'));
     } catch (error) {
       if (error.message === 'SOCIAL_POST_NOT_LOADED')
-        error = Error('未找到这条帖子的完整内容，请关闭分享菜单，在原帖上重新点击分享。');
-      if (preparing) embeddedPicker.fail(error.message, preparing);
+        error = Error(t('未找到这条帖子的完整内容，请关闭分享菜单，在原帖上重新点击分享。'));
+      if (preparing) embeddedPicker.fail(failureMessage(error.message), preparing);
       throw error;
     } finally {
       capturing = false;
@@ -279,18 +292,20 @@ export function installSocialUI(
     panel.showPopover?.();
     const position = anchorShareMenu(window, panel, anchor, platform === 'x');
     panelPosition = position;
-    const loading = menu.action('正在读取 BOT…', 'refresh');
+    const loading = menu.action(t('正在读取 BOT…'), 'refresh');
     panel.append(loading);
     position.update();
     const thisPanel = panel;
     let phase = 'targets';
     try {
       targetsCache = await rpc('social.targets');
+      await initI18n({ api: window.browser || window.chrome, document: null });
       if (panel !== thisPanel || !thisPanel.isConnected) return;
+      thisPanel.dir = supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
       phase = 'render';
       thisPanel.replaceChildren();
       if (!targetsCache.authenticated) {
-        const login = menu.action('打开 Grok Bot 登录', 'panel');
+        const login = menu.action(t('打开 Grok Bot 登录'), 'panel');
         activate(login, () => {
           closePanel();
           rpc('social.open').catch((error) => toast(error.message));
@@ -305,7 +320,7 @@ export function installSocialUI(
       ];
       for (const bot of bots) {
         const row = menu.action(
-          `${bot.name || 'BOT'}${bot.isPrimary ? '（主 BOT）' : ''}`,
+          `${bot.name || 'BOT'}${bot.isPrimary ? t('（主 BOT）') : ''}`,
           bot.isPrimary ? 'send' : 'bookmark',
         );
         menuAvatar(row, bot);
@@ -316,7 +331,7 @@ export function installSocialUI(
             const host = document.querySelector(`[${own}="wechat"]`);
             if (host) {
               const scope = host.shadowRoot;
-              scope.querySelector('#name').textContent = '发送给 ' + bot.name;
+              scope.querySelector('#name').textContent = t('发送给 {name}', { name: bot.name });
               const mark = scope.querySelector('#avatar');
               mark.dataset.avatar = bot.id;
               mark.dataset.size = '24';
@@ -327,7 +342,7 @@ export function installSocialUI(
           capture(bot.id, false, selected).catch((error) =>
             toast(
               error.message === 'SOCIAL_POST_NOT_LOADED'
-                ? '帖子尚未加载完整，请打开帖子后重试。'
+                ? t('帖子尚未加载完整，请打开帖子后重试。')
                 : error.message,
             ),
           );
@@ -337,7 +352,7 @@ export function installSocialUI(
       const divider = document.createElement('div');
       divider.style.cssText = 'height:1px;margin:4px 0;background:currentColor;opacity:.12';
       thisPanel.append(divider);
-      const choose = menu.action('发送给其他 BOT', 'plus');
+      const choose = menu.action(t('发送给其他 BOT'), 'plus');
       activate(choose, () => {
         closePanel();
         capture(undefined, true, selected).catch((error) => toast(error.message));
@@ -359,10 +374,16 @@ export function installSocialUI(
                 : 'BOT_TARGETS_FAILED';
         const detail = document.createElement('div');
         detail.setAttribute('role', 'status');
-        detail.textContent = `无法读取 BOT（${code}）。${code === 'EXTENSION_CONTEXT_INVALIDATED' ? '扩展已重载，请刷新当前 X 页面。' : '请重试；若仍失败，请提供此错误代码。'}`;
+        detail.textContent = t('无法读取 BOT（{code}）。{detail}', {
+          code,
+          detail:
+            code === 'EXTENSION_CONTEXT_INVALIDATED'
+              ? t('扩展已重载，请刷新当前 X 页面。')
+              : t('请重试；若仍失败，请提供此错误代码。'),
+        });
         const retry = document.createElement('button');
         retry.type = 'button';
-        retry.textContent = '重试';
+        retry.textContent = t('重试');
         retry.style.cssText =
           'margin-top:12px;padding:8px 12px;font:inherit;color:inherit;background:transparent;border:1px solid currentColor;border-radius:6px;cursor:pointer';
         activate(retry, () => openPanel(anchor, template, selected));
@@ -440,6 +461,8 @@ export function installSocialUI(
       const targets = await rpc('social.targets');
       if (disposed || !area.list.isConnected || recipientLists.get(area.list) !== entry) return;
       targetsCache = targets;
+      await initI18n({ api: window.browser || window.chrome, document: null });
+      if (disposed || !area.list.isConnected || recipientLists.get(area.list) !== entry) return;
       const bots = targets.authenticated
         ? [
             ...new Map(
@@ -461,7 +484,7 @@ export function installSocialUI(
             capture(bot?.id, !bot, entry.context).catch((error) => toast(error.message));
           });
         });
-        if (!targets.authenticated) row.setAttribute('aria-label', '打开 Grok Bot 登录');
+        if (!targets.authenticated) row.setAttribute('aria-label', t('打开 Grok Bot 登录'));
         entry.nodes.push(row);
         if (avatarRoot) entry.avatarRoots.push(avatarRoot);
         if (platform === 'douyin' && !bot) {
@@ -515,7 +538,7 @@ export function installSocialUI(
       if (platform === 'douyin' && (retryCounts.get(owner) || 0) < 2) retryRecipients(owner);
       else {
         failedRecipients.add(owner);
-        toast('无法读取 BOT，请关闭分享菜单后重试，或重新加载扩展和页面。');
+        toast(t('无法读取 BOT，请关闭分享菜单后重试，或重新加载扩展和页面。'));
       }
     }
   }
@@ -566,9 +589,9 @@ export function installSocialUI(
           fontFamily: nativeStyle.fontFamily || 'system-ui',
           lineHeight: nativeStyle.lineHeight || '1.6',
         });
+        host.dir = supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
         const shadow = host.attachShadow({ mode: 'open' });
-        shadow.innerHTML =
-          '<style>:host{display:inline-flex!important;visibility:visible!important;opacity:1!important}div{display:inline-flex;align-items:center;gap:4px;font:inherit}button{all:initial;display:inline-flex;align-items:center;gap:4px;color:#576b95;font:inherit;cursor:pointer}button:focus-visible{outline:2px solid #576b95}img,svg{max-width:100%;max-height:100%}img{width:100%;height:100%;object-fit:cover}button:last-child{padding:0 6px}#avatar{display:flex;width:24px;height:24px;align-items:center;justify-content:center}</style><div><button id="send" type="button"><span id="avatar" aria-hidden="true"></span><span id="name">发送给 BOT</span></button><button id="dropdown" type="button" aria-label="选择其他 BOT" aria-haspopup="menu">▾</button></div>';
+        shadow.innerHTML = `<style>:host{display:inline-flex!important;visibility:visible!important;opacity:1!important}div{display:inline-flex;align-items:center;gap:4px;font:inherit}button{all:initial;display:inline-flex;align-items:center;gap:4px;color:#576b95;font:inherit;cursor:pointer}button:focus-visible{outline:2px solid #576b95}img,svg{max-width:100%;max-height:100%}img{width:100%;height:100%;object-fit:cover}button:last-child{padding:0 6px}#avatar{display:flex;width:24px;height:24px;align-items:center;justify-content:center}</style><div><button id="send" type="button"><span id="avatar" aria-hidden="true"></span><span id="name">${escapeHTML(t('发送给 BOT'))}</span></button><button id="dropdown" type="button" aria-label="${escapeHTML(t('选择其他 BOT'))}" aria-haspopup="menu">▾</button></div>`;
         activate(shadow.querySelector('#send'), () => {
           if (!wechatBotId) openPanel(host, null, contextForShare(window, host));
           else
@@ -581,9 +604,13 @@ export function installSocialUI(
         );
         meta.append(host);
         rpc('social.targets')
-          .then((targets) => {
+          .then(async (targets) => {
             if (!host.isConnected || disposed) return;
             targetsCache = targets;
+            await initI18n({ api: window.browser || window.chrome, document: null });
+            if (!host.isConnected || disposed) return;
+            shadow.querySelector('#name').textContent = t('发送给 BOT');
+            shadow.querySelector('#dropdown').setAttribute('aria-label', t('选择其他 BOT'));
             const bots = [
               ...(targets.primary ? [targets.primary] : []),
               ...(targets.favorites || []),
@@ -591,7 +618,9 @@ export function installSocialUI(
             const selected = bots.find((b) => b.id === wechatBotId) || targets.primary;
             if (selected) {
               wechatBotId = selected.id;
-              shadow.querySelector('#name').textContent = '发送给 ' + selected.name;
+              shadow.querySelector('#name').textContent = t('发送给 {name}', {
+                name: selected.name,
+              });
               const mark = shadow.querySelector('#avatar');
               mark.dataset.avatar = selected.id;
               mark.dataset.size = '24';
@@ -622,12 +651,12 @@ export function installSocialUI(
       menuAvatar(existing, shareAvatar);
       return;
     }
-    const entry = styleAction(window, share.template, '分享给 BOT', 'send');
+    const entry = styleAction(window, share.template, t('分享给 BOT'), 'send');
     menuAvatar(entry, shareAvatar);
     entry.setAttribute(own, 'entry');
     entry.setAttribute('aria-haspopup', 'menu');
     const caret = document.createElement('span');
-    caret.textContent = '›';
+    caret.textContent = entry.dir === 'rtl' ? '‹' : '›';
     caret.style.marginInlineStart = 'auto';
     entry.append(caret);
     entryContexts.set(entry, context);
@@ -718,8 +747,30 @@ export function installSocialUI(
     attributes: true,
     attributeFilter: ['class', 'style', 'hidden'],
   });
+  const runtime = (window.browser || window.chrome)?.runtime;
+  const languageChanged = (message) => {
+    if (message?.type !== 'state.changed') return;
+    const previous = getLocale();
+    initI18n({ api: window.browser || window.chrome, document: null })
+      .then(() => {
+        if (disposed || previous === getLocale()) return;
+        closePanel();
+        for (const [list, entry] of recipientLists) clearRecipientList(list, entry);
+        for (const [host, scope] of wechatScopes) {
+          avatars?.release(scope);
+          host.remove();
+        }
+        wechatScopes.clear();
+        for (const host of document.querySelectorAll(`[${own}="wechat"],[${own}="entry"]`))
+          host.remove();
+        schedule();
+      })
+      .catch(() => {});
+  };
+  runtime?.onMessage?.addListener(languageChanged);
   const dispose = () => {
     disposed = true;
+    runtime?.onMessage?.removeListener?.(languageChanged);
     embeddedPicker.dispose();
     for (const done of [...recordWaiters.values()]) done();
     observer.disconnect();

@@ -1,3 +1,4 @@
+import { initI18n } from '../i18n/index.js';
 import { api } from '../platform/browser.js';
 import { createTaskProcessor } from './tasks.js';
 const processor = createTaskProcessor({ api });
@@ -9,9 +10,11 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
     respond({ ok: false, error: 'UNKNOWN_OFFSCREEN_ACTION' });
     return;
   }
-  fn(message).then(
-    (value) => respond({ ok: true, value }),
-    (error) => respond({ ok: false, error: error.message }),
-  );
+  initI18n({ api, locale: message.language })
+    .then(() => fn(message))
+    .then(
+      (value) => respond({ ok: true, value }),
+      (error) => respond({ ok: false, error: error.message }),
+    );
   return true;
 });

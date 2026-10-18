@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 export function boundedRect(rect, width, height) {
   const r = rect ?? { x: 0, y: 0, width, height };
   if (![r.x, r.y, r.width, r.height, width, height].every(Number.isFinite))
@@ -99,7 +100,7 @@ export function redactedMaterial(item, index) {
     id: item.id,
     accountId: item.accountId,
     kind: item.kind,
-    title: '已打码图片',
+    title: t('已打码图片'),
     url: '',
     markdown: '',
     createdAt: item.createdAt,
@@ -107,7 +108,7 @@ export function redactedMaterial(item, index) {
     updatedAt: Date.now(),
     inBasket: item.inBasket,
     redacted: true,
-    warnings: ['打码后已移除自动提取文字、来源信息及其他附件'],
+    warnings: [t('打码后已移除自动提取文字、来源信息及其他附件')],
     attachments: [{ name: 'redacted.png', blob: item.attachments[index].blob }],
   };
 }

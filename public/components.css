@@ -181,7 +181,7 @@ input[type='number'] {
 }
 select {
   min-height: 36px;
-  padding-right: 36px;
+  padding-inline-end: 36px;
 }
 .toggle {
   width: 34px;
@@ -312,7 +312,7 @@ dialog {
 }
 .favorite-button {
   top: 6px;
-  right: 6px;
+  inset-inline-end: 6px;
   border-width: 0;
   width: 24px;
   height: 24px;
@@ -331,7 +331,7 @@ dialog {
   fill: currentColor;
 }
 .default-badge {
-  left: 6px;
+  inset-inline-start: 6px;
   top: 6px;
   padding: 2px 4px;
   background: var(--selected);
@@ -464,7 +464,7 @@ body[data-view='settings'] .shell {
   border: 1px solid var(--line);
   border-radius: var(--control-radius);
   max-width: 150px;
-  padding-right: 10px;
+  padding-inline-end: 10px;
 }
 .number-control:focus-within {
   border-color: var(--focus);
@@ -767,10 +767,10 @@ body[data-view='replies'] #panel {
 }
 .markdown ul,
 .markdown ol {
-  padding-left: 22px;
+  padding-inline-start: 22px;
 }
 .markdown li {
-  padding-left: 2px;
+  padding-inline-start: 2px;
   margin: 4px 0;
 }
 .markdown li > p {
@@ -790,8 +790,9 @@ body[data-view='replies'] #panel {
   accent-color: var(--ink);
 }
 .markdown blockquote {
-  border-left: 3px solid var(--line);
-  padding: 4px 0 4px 14px;
+  border-inline-start: 3px solid var(--line);
+  padding-block: 4px;
+  padding-inline: 14px 0;
   color: var(--muted);
 }
 .markdown blockquote p:last-child {
@@ -885,7 +886,7 @@ body[data-view='replies'] #panel {
 }
 .markdown th,
 .markdown td {
-  text-align: left;
+  text-align: start;
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
@@ -1142,4 +1143,61 @@ body[data-view='compose'] .topbar .bot-name {
 .picker-header-actions .secondary {
   padding: 8px 10px;
   white-space: nowrap;
+}
+
+/* Translated labels may need more width than the original Chinese copy. */
+.top-actions .toolbar-action {
+  width: auto;
+  min-width: 46px;
+  max-width: 90px;
+  height: auto;
+  min-height: 40px;
+  padding-inline: 4px;
+}
+.toolbar-action span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.home-tool span,
+.field-label,
+.section-nav a {
+  overflow-wrap: anywhere;
+}
+:root[dir='rtl'] select {
+  background-position: left 11px center;
+}
+:root[dir='rtl'] .toggle::after {
+  left: auto;
+  right: 2px;
+}
+:root[dir='rtl'] .toggle[aria-checked='true']::after {
+  transform: translateX(-14px);
+}
+.action-tile span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.settings-nav a,
+.field-copy,
+.field-description,
+.notice,
+.warning {
+  overflow-wrap: anywhere;
+}
+.markdown pre,
+.markdown code,
+kbd,
+input[type='url'],
+input[type='email'] {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+:root[dir='rtl'] select {
+  padding-inline-start: 11px;
+}
+
+:root[dir='rtl'] [data-action='home'] svg,
+:root[dir='rtl'] #back svg {
+  transform: scaleX(-1);
 }

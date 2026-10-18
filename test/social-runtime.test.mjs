@@ -40,6 +40,7 @@ test('packaged social entry mounts the native animated avatar in an isolated rec
   w.matchMedia = () => ({ matches: false, addEventListener() {} });
   w.HTMLElement.prototype.getClientRects = () => [{ width: 240, height: 100 }];
   w.chrome = {
+    i18n: { getUILanguage: () => 'zh-CN' },
     runtime: {
       sendMessage: async () => ({
         ok: true,
@@ -105,6 +106,7 @@ test('packaged X sharing renders real animated avatars and loads recipients thro
     return add.call(this, type, listener, options);
   };
   w.chrome = {
+    i18n: { getUILanguage: () => 'zh-CN' },
     runtime: {
       sendMessage: async (message) => {
         calls.push(message);
@@ -121,6 +123,7 @@ test('packaged X sharing renders real animated avatars and loads recipients thro
   };
   try {
     w.eval(bundle.outputFiles[0].text);
+    await until(() => w.document.querySelector('[data-grok-social="entry"]'));
     const entry = w.document.querySelector('[data-grok-social="entry"]');
     await until(() => entry?.firstElementChild.shadowRoot?.querySelector('svg'));
     entry.click();
@@ -145,7 +148,7 @@ test('packaged X sharing renders real animated avatars and loads recipients thro
         rows[0].firstElementChild.shadowRoot.querySelector('svg') &&
         rows[1].firstElementChild.shadowRoot.querySelector('svg'),
     );
-    assert.equal(calls[0].type, 'social.targets');
+    assert.equal(calls.find((call) => call.type !== 'i18n.locale').type, 'social.targets');
     await until(() => entry.firstElementChild.shadowRoot.querySelector('svg'));
     assert.ok(
       entry.firstElementChild.shadowRoot.querySelector(

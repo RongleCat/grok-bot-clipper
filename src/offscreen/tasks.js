@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 import { editImage, stitchImages, redactedMaterial } from '../core/images.js';
 import { get, put } from '../core/db.js';
 import { renderStill, toBody } from '../../vendor/desktop-avatar/engine.js';
@@ -85,7 +86,9 @@ export function createTaskProcessor({
     }));
     if (tiles.length > 1) {
       item.warnings ??= [];
-      item.warnings.push(`长截图已分为 ${tiles.length} 个按顺序命名的 PNG 文件`);
+      item.warnings.push(
+        t('长截图已分为 {count} 个按顺序命名的 PNG 文件', { count: tiles.length }),
+      );
     }
     await put('materials', item);
     return { tiles: tiles.length };
@@ -120,10 +123,13 @@ export function createTaskProcessor({
       const page = await doc.getPage(i),
         c = await page.getTextContent();
       text +=
-        `\n\n## 第 ${i} 页\n\n` + c.items.map((x) => x.str + (x.hasEOL ? '\n' : ' ')).join('');
+        '\n\n## ' +
+        t('第 {page} 页', { page: i }) +
+        '\n\n' +
+        c.items.map((x) => x.str + (x.hasEOL ? '\n' : ' ')).join('');
       if (text.length > 2000000) {
         item.warnings ??= [];
-        item.warnings.push('PDF 提取文字超过 200 万字符，其余内容保留在原文件中');
+        item.warnings.push(t('PDF 提取文字超过 200 万字符，其余内容保留在原文件中'));
         break;
       }
     }

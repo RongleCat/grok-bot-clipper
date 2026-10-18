@@ -1,3 +1,4 @@
+import { t, getLocale, supportedLocales } from '../i18n/index.js';
 export function createEmbeddedPicker(window, { getURL, onQueued }) {
   let host, frame, requestId;
   const { document } = window;
@@ -14,6 +15,7 @@ export function createEmbeddedPicker(window, { getURL, onQueued }) {
     host = document.createElement('div');
     host.setAttribute('data-grok-social', 'picker');
     host.setAttribute('popover', 'manual');
+    host.dir = supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
     const shadow = host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent =
@@ -32,10 +34,10 @@ export function createEmbeddedPicker(window, { getURL, onQueued }) {
       'display:flex;align-items:center;gap:16px;padding:18px;font:14px/1.5 system-ui';
     const status = document.createElement('span');
     status.setAttribute('role', 'status');
-    status.textContent = '正在读取帖子并打开 BOT…';
+    status.textContent = t('正在读取帖子并打开 BOT…');
     const cancel = document.createElement('button');
     cancel.type = 'button';
-    cancel.textContent = '取消';
+    cancel.textContent = t('取消');
     cancel.style.cssText =
       'flex:0 0 auto;border:0;background:transparent;color:inherit;padding:8px;font:inherit;cursor:pointer';
     cancel.onclick = close;
@@ -55,7 +57,7 @@ export function createEmbeddedPicker(window, { getURL, onQueued }) {
     requestId = id;
     const shadow = createHost();
     frame = document.createElement('iframe');
-    frame.title = '选择 BOT';
+    frame.title = t('选择 BOT');
     frame.src =
       sourceURL +
       '?request=' +

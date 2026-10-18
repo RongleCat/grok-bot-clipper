@@ -209,7 +209,7 @@ body.popup {
   gap: 14px;
   width: 100%;
   min-height: 78px;
-  text-align: left;
+  text-align: start;
   padding: 10px 14px;
   border-radius: 20px;
   background: var(--surface);
@@ -271,7 +271,7 @@ body.popup {
   border-radius: 20px;
   background: var(--solid);
   box-shadow: 0 2px 4px #00000002;
-  text-align: left;
+  text-align: start;
 }
 .action-tile:hover {
   background: var(--surface);
@@ -728,7 +728,7 @@ dialog::backdrop {
 }
 .text-button svg:last-child {
   flex-shrink: 0;
-  margin-right: 4px;
+  margin-inline-end: 4px;
 }
 .count {
   color: var(--muted);
@@ -832,7 +832,7 @@ dialog::backdrop {
   border-bottom: 1px solid var(--line);
 }
 .shot-tools .text-button {
-  margin-left: auto;
+  margin-inline-start: auto;
   padding: 6px;
 }
 .canvas-wrap {
@@ -949,7 +949,7 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   gap: 14px;
-  text-align: left;
+  text-align: start;
   padding: 17px 18px;
   background: var(--surface);
   border-radius: 18px;
@@ -1189,7 +1189,7 @@ body[data-view='compose'] #instruction {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 6px 12px;
-  text-align: left;
+  text-align: start;
   padding: 16px;
   margin: 10px 0;
   border: 1px solid var(--line);

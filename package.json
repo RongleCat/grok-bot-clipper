@@ -1,6 +1,6 @@
 {
   "name": "grok-bot-clipper",
-  "version": "0.3.10",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,8 @@
     "format": "prettier --write src test scripts public manifest.json package.json docs README.md",
     "build:firefox": "node scripts/build.mjs firefox",
     "package:firefox": "npm run build:firefox && node scripts/package.mjs firefox",
-    "lint:firefox": "web-ext lint --source-dir dist-firefox --ignore-files \"*.map\" build-meta.json"
+    "lint:firefox": "web-ext lint --source-dir dist-firefox --ignore-files \"*.map\" build-meta.json",
+    "check:i18n": "node scripts/check-i18n.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^1.0.11",

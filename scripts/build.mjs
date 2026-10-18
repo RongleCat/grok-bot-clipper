@@ -1,3 +1,4 @@
+import { writeChromeLocales } from './i18n-build.mjs';
 import { buildTarget, manifestFor } from './targets.mjs';
 import { icon } from '../src/ui/icons.js';
 import { build } from 'esbuild';
@@ -69,6 +70,7 @@ await writeFile(
     2,
   ) + '\n',
 );
+await writeChromeLocales(outdir);
 await copyFile('public/style.css', `${outdir}/style.css`);
 await copyFile('public/components.css', `${outdir}/components.css`);
 await copyFile('public/share.css', `${outdir}/share.css`);
@@ -80,14 +82,14 @@ for (const [file, entry, title] of [
   ...(browserTarget === 'chrome'
     ? [
         ['offscreen', 'offscreen', 'Grok Bot Clipper image processing'],
-        ['archive', 'archive', '正在保存网页'],
+        ['archive', 'archive', 'Saving web page'],
       ]
     : [['background', 'background', 'Grok Bot Clipper background']]),
-  ['share', 'share', '选择 BOT'],
+  ['share', 'share', 'Select BOT'],
 ])
   await writeFile(
     `${outdir}/${file}.html`,
-    `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>${entry === 'app' ? '<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="components.css">' : entry === 'share' ? '<link rel="stylesheet" href="share.css">' : ''}</head><body><div id="app"></div><script type="module" src="${entry}.js"></script></body></html>`,
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>${entry === 'app' ? '<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="components.css">' : entry === 'share' ? '<link rel="stylesheet" href="share.css">' : ''}</head><body><div id="app"></div><script type="module" src="${entry}.js"></script></body></html>`,
   );
 for (const size of [16, 32, 48, 128])
   await sharp(Buffer.from(renderStill({ body: toBody('blob'), ink: '#000000', size })))

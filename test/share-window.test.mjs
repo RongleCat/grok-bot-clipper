@@ -38,14 +38,18 @@ async function setup(askBeforeSend, send, refresh, firefox = false, embedded = f
   w.parent.postMessage = (data, origin) => frameMessages.push({ data, origin });
   w.matchMedia = () => ({ matches: false, addEventListener() {} });
   w.chrome = {
+    i18n: { getUILanguage: () => 'zh-CN' },
     runtime: {
       sendMessage: async (message) => {
+        if (message.type === 'i18n.locale')
+          return { ok: true, value: { language: 'zh_CN', resolvedLanguage: 'zh_CN', catalog: {} } };
         calls.push(message);
         if (message.type === 'social.picker.state')
           return {
             ok: true,
             value: {
               bots,
+              language: 'zh_CN',
               favorites: ['saved'],
               primaryId: 'main',
               selectedBotId: 'main',

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Grok Bot Clipper",
-  "version": "0.3.10",
-  "description": "Grok Bot 的第三方浏览器扩展：采集网页、图片、截图与视频，整理上下文并发送给你的 BOT。",
+  "version": "0.4.0",
+  "description": "__MSG_manifest_description__",
   "minimum_chrome_version": "120",
   "permissions": [
     "storage",
@@ -76,21 +76,21 @@
         "default": "Ctrl+Shift+7",
         "mac": "Command+Shift+7"
       },
-      "description": "框选截图并发送给 BOT"
+      "description": "__MSG_command_capture_region__"
     },
     "send-page": {
       "suggested_key": {
         "default": "Ctrl+Shift+8",
         "mac": "Command+Shift+8"
       },
-      "description": "保存网页并发送给 BOT"
+      "description": "__MSG_command_send_page__"
     },
     "quick-command": {
       "suggested_key": {
         "default": "Ctrl+Shift+9",
         "mac": "Command+Shift+9"
       },
-      "description": "打开快捷命令"
+      "description": "__MSG_command_quick_command__"
     }
   },
   "content_security_policy": {
@@ -139,5 +139,6 @@
         "http://mp.weixin.qq.com/*"
       ]
     }
-  ]
+  ],
+  "default_locale": "en"
 }

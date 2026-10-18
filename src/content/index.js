@@ -1,9 +1,12 @@
+import { escapeHTML } from '../ui/components.js';
+import { t, initI18n, getLocale, supportedLocales } from '../i18n/index.js';
 import { api } from '../platform/browser.js';
 import { regionRect } from '../core/region.js';
 import { icon } from '../ui/icons.js';
 import { Readability } from '@mozilla/readability';
 import TurndownService from 'turndown';
 import { cleanURL, toCSV } from '../core/context.js';
+initI18n({ api, document: null }).catch(() => {});
 if (!globalThis.__grokCapture) {
   globalThis.__grokCapture = true;
   let lastTarget = null,
@@ -143,7 +146,7 @@ if (!globalThis.__grokCapture) {
         .map((e) => e.innerText)
         .slice(0, 200),
     };
-    if (item.frames.length) warnings.push('嵌入框架内容仅在授权后单独采集；本材料保留框架出处');
+    if (item.frames.length) warnings.push(t('嵌入框架内容仅在授权后单独采集；本材料保留框架出处'));
     if (kind === 'selection') {
       const text = options.selectionText || selected;
       item.selection = text;
@@ -159,7 +162,7 @@ if (!globalThis.__grokCapture) {
         item.markdown = fence + language + '\n' + text + '\n' + fence;
       }
       const near = options.includeNearby !== false ? nearby(selection) : '';
-      if (near && near !== text) item.markdown += '\n\n附近段落：\n' + near;
+      if (near && near !== text) item.markdown += t('\n\n附近段落：\n') + near;
       if (options.includePageContext) {
         const main = document.querySelector('article,main,[role="main"]');
         if (main) item.pageContext = td.turndown(visibleClone(main));
@@ -182,11 +185,14 @@ if (!globalThis.__grokCapture) {
         width: img?.naturalWidth,
         height: img?.naturalHeight,
       };
-      item.markdown = `图片：${item.image.alt}\n原图：${cleanURL(item.image.url)}`;
+      item.markdown = t('图片：{alt}\n原图：{url}', {
+        alt: item.image.alt,
+        url: cleanURL(item.image.url),
+      });
       if (img) {
         const figure = img.closest('figure');
         if (figure?.querySelector('figcaption'))
-          item.markdown += '\n图注：' + figure.querySelector('figcaption').innerText;
+          item.markdown += t('\n图注：') + figure.querySelector('figcaption').innerText;
       }
     } else {
       const target =
@@ -203,7 +209,7 @@ if (!globalThis.__grokCapture) {
         try {
           article = new Readability(d, { charThreshold: 80, keepClasses: true }).parse();
         } catch {
-          warnings.push('正文识别失败，已提取可见页面');
+          warnings.push(t('正文识别失败，已提取可见页面'));
         }
       }
       if (article?.content) {
@@ -254,12 +260,12 @@ if (!globalThis.__grokCapture) {
           });
       }
       item.video.tracks = tracks;
-      item.markdown += '\n\n视频时间点：' + Math.floor(video.currentTime) + ' 秒';
+      item.markdown += t('\n\n视频时间点：') + Math.floor(video.currentTime) + t(' 秒');
       if (tracks.length)
         item.markdown +=
-          '\n\n字幕：\n' +
+          t('\n\n字幕：\n') +
           tracks.flatMap((t) => t.cues.map((c) => `[${c.start.toFixed(1)}s] ${c.text}`)).join('\n');
-      else warnings.push('未读取到可访问字幕，仅包含时间点和页面内容');
+      else warnings.push(t('未读取到可访问字幕，仅包含时间点和页面内容'));
     }
     const audio = document.querySelector('audio');
     if (audio) {
@@ -280,29 +286,33 @@ if (!globalThis.__grokCapture) {
             const clone = body.cloneNode(true);
             strip(clone);
             item.markdown +=
-              '\n\n## 嵌入页面：' +
+              t('\n\n## 嵌入页面：') +
               (frame.title || cleanURL(frame.src)) +
               '\n\n' +
               td.turndown(clone);
           }
         } catch {}
       }
-      if (readable) warnings.push(`已附带 ${readable} 个可读取嵌入页面的正文`);
+      if (readable) warnings.push(t('已附带 {count} 个可读取嵌入页面的正文', { count: readable }));
     }
-    if (document.querySelector('canvas')) warnings.push('Canvas 内容未转为文字，可额外采集截图');
+    if (document.querySelector('canvas')) warnings.push(t('Canvas 内容未转为文字，可额外采集截图'));
     if (item.markdown.length > 2000000) {
       item.markdown = item.markdown.slice(0, 2000000);
-      warnings.push('页面文字超过 200 万字符的采集上限，后续内容未采集');
+      warnings.push(t('页面文字超过 200 万字符的采集上限，后续内容未采集'));
     }
     return item;
   }
   function captureNotice(text) {
+    if (/^[A-Z][A-Z0-9_]*$/.test(String(text || '')))
+      text = t('操作失败（{code}），请重试', { code: text });
     document.getElementById('grok-capture-notice')?.remove();
     const host = document.createElement('div');
     host.id = 'grok-capture-notice';
     const root = host.attachShadow({ mode: 'closed' });
     root.innerHTML =
       '<style>:host{all:initial;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147483647}div{padding:12px 16px;background:#202020;color:#fff;border-radius:10px;font:14px/1.5 system-ui}</style><div role="status"></div>';
+    root.querySelector('div').dir =
+      supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
     root.querySelector('div').textContent = text;
     document.documentElement.append(host);
     setTimeout(() => host.remove(), 4500);
@@ -313,8 +323,14 @@ if (!globalThis.__grokCapture) {
     host.id = 'grok-region-host';
     host.style.cssText = 'position:fixed;inset:0;z-index:2147483647;';
     const root = host.attachShadow({ mode: 'closed' });
-    root.innerHTML = `<style>:host{all:initial}.overlay{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;cursor:crosshair;touch-action:none;user-select:none;background:#0003}.overlay::backdrop{background:transparent}.box{position:fixed;display:none;border:1px solid white;box-shadow:0 0 0 99999px #0006;pointer-events:none}.hint{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:24px;background:white;color:#202020;font:14px/1.5 system-ui;pointer-events:none}</style><dialog class="overlay"><div class="box"></div><div class="hint">${icon('capture', 18)}拖动框选截图 · Esc 取消</div></dialog>`;
+    root.innerHTML = `<style>:host{all:initial}.overlay{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;cursor:crosshair;touch-action:none;user-select:none;background:#0003}.overlay::backdrop{background:transparent}.box{position:fixed;display:none;border:1px solid white;box-shadow:0 0 0 99999px #0006;pointer-events:none}.hint{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:24px;background:white;color:#202020;font:14px/1.5 system-ui;pointer-events:none}</style><dialog class="overlay"><div class="box"></div><div class="hint">${icon('capture', 18)}${escapeHTML(t('拖动框选截图 · Esc 取消'))}</div></dialog>`;
     document.documentElement.append(host);
+    root
+      .querySelector('.hint')
+      ?.setAttribute(
+        'dir',
+        supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr',
+      );
     const overlay = root.querySelector('.overlay'),
       box = root.querySelector('.box');
     overlay.showModal();
@@ -372,8 +388,8 @@ if (!globalThis.__grokCapture) {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       try {
         const result = await api.runtime.sendMessage({ type: 'capture.region', rect, viewport });
-        if (!result?.ok) throw Error(result?.error || '截图失败');
-        if (result.value?.jobId) captureNotice('截图已加入发送队列');
+        if (!result?.ok) throw Error(result?.error || t('截图失败'));
+        if (result.value?.jobId) captureNotice(t('截图已加入发送队列'));
       } catch (error) {
         captureNotice(error.message);
       }
@@ -388,8 +404,7 @@ if (!globalThis.__grokCapture) {
     const host = document.createElement('div');
     host.id = 'grok-capture-host';
     const root = host.attachShadow({ mode: 'closed' });
-    root.innerHTML =
-      '<style>:host{all:initial}.box{position:fixed;pointer-events:none;border:2px solid #54765e;background:#54765e18;z-index:2147483647}.hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#242823;color:white;padding:12px 18px;border-radius:10px;font:14px system-ui;z-index:2147483647}</style><div class="box"></div><div class="hint">点击采集元素 · Esc 取消</div>';
+    root.innerHTML = `<style>:host{all:initial}.box{position:fixed;pointer-events:none;border:2px solid #54765e;background:#54765e18;z-index:2147483647}.hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#242823;color:white;padding:12px 18px;border-radius:10px;font:14px system-ui;z-index:2147483647}</style><div class="box"></div><div class="hint">${escapeHTML(t('点击采集元素 · Esc 取消'))}</div>`;
     document.documentElement.append(host);
     const box = root.querySelector('.box');
     let current;
@@ -438,6 +453,7 @@ if (!globalThis.__grokCapture) {
   api.runtime.onMessage.addListener((message, sender, respond) => {
     if (message.target !== 'content') return;
     (async () => {
+      await initI18n({ api, document: null });
       switch (message.action) {
         case 'capture':
           return capture(message.options);

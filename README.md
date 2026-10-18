@@ -49,6 +49,8 @@ The **BOT picker** supports literal names, full pinyin and pinyin initials, with
 
 **Social capture** preserves available titles, text, authors, tags, public engagement counts and media. It can retrieve and download complete video files from supported platform data, but availability depends on each page and response. Missing fields are reported, never filled with invented zeroes; covers are not presented as video files.
 
+**Languages:** 55 language and regional configurations, automatic browser-language detection, and a manual language setting. Extension pages, share menus, capture controls and installed-extension metadata are localized, including RTL layouts. Translations are machine-assisted and welcome native-speaker corrections. See the [localization guide](docs/i18n.md) for coverage and contribution instructions.
+
 ## Install from source
 
 Requires Node.js **22.13+**, npm and a working Grok Bot account. This repository currently distributes source code; automated builds, package publishing and releases are not configured.

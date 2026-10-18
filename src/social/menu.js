@@ -1,3 +1,4 @@
+import { t, getLocale, supportedLocales } from '../i18n/index.js';
 import { icon } from '../ui/icons.js';
 const own = 'data-grok-social';
 function nativeTextStyle(window, template) {
@@ -36,6 +37,7 @@ export function createMenuAction(
   const node = window.document.createElement(template?.tagName === 'BUTTON' ? 'button' : 'div');
   if (node.tagName === 'BUTTON') node.type = 'button';
   node.setAttribute(own, 'action');
+  node.dir = supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
   node.setAttribute('role', 'menuitem');
   node.tabIndex = 0;
   if (template && copyClass) {
@@ -103,10 +105,11 @@ export function createMenuAction(
 export function createShareMenu(window, template) {
   const panel = window.document.createElement('div');
   panel.setAttribute(own, 'panel');
+  panel.dir = supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
   panel.setAttribute('role', 'menu');
   panel.tabIndex = -1;
   panel.style.outline = 'none';
-  panel.setAttribute('aria-label', '分享给 BOT');
+  panel.setAttribute('aria-label', t('分享给 BOT'));
   panel.setAttribute('popover', 'manual');
   const { background, dark } = menuColors(window, template);
   Object.assign(panel.style, {

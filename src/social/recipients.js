@@ -1,3 +1,4 @@
+import { t, getLocale, supportedLocales } from '../i18n/index.js';
 import { icon } from '../ui/icons.js';
 // Find repeated avatar/name recipients inside a bounded native share popup.
 // The copy/download/QR toolbar is deliberately never used as a recipient list.
@@ -113,6 +114,7 @@ export function recipientNode(window, platform, area, bot, choose, activate) {
   const row = document.createElement(tile || choose ? 'button' : 'div');
   if (row.tagName === 'BUTTON') row.type = 'button';
   row.setAttribute('data-grok-social', choose ? 'choose' : 'friend');
+  row.dir = supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
   if (bot) row.setAttribute('data-grok-bot', bot.id);
   const native = window.getComputedStyle(area.template);
   const walker = document.createTreeWalker(area.template, window.NodeFilter.SHOW_TEXT);
@@ -187,7 +189,7 @@ export function recipientNode(window, platform, area, bot, choose, activate) {
     height: 'auto',
     maxHeight: 'none',
     minHeight: tile ? '0' : choose ? '40px' : `${rowMinHeight}px`,
-    textAlign: tile ? 'center' : 'left',
+    textAlign: tile ? 'center' : 'start',
     cursor: tile || choose ? 'pointer' : 'default',
   });
   const slotSize = size;
@@ -215,20 +217,23 @@ export function recipientNode(window, platform, area, bot, choose, activate) {
     mark.style.cssText = `display:flex;flex:0 0 ${iconSize}px;align-items:center;justify-content:center;box-sizing:border-box;width:${iconSize}px;height:${iconSize}px;`;
   }
   const name = document.createElement('span');
-  name.textContent = choose ? '选择其他 BOT' : bot.name || 'BOT';
+  name.textContent = choose ? t('选择其他 BOT') : bot.name || 'BOT';
   name.title = name.textContent;
   name.style.cssText = tile
     ? 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;line-height:1.4;max-width:100%;min-height:2.8em;'
     : 'min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
   row.append(avatar, name);
   if (tile || choose) {
-    row.setAttribute('aria-label', choose ? '选择其他 BOT' : `分享给 ${bot.name || 'BOT'}`);
+    row.setAttribute(
+      'aria-label',
+      choose ? t('选择其他 BOT') : t('分享给 {name}', { name: bot.name || 'BOT' }),
+    );
     activate(row);
   } else {
     const send = document.createElement('button');
     send.type = 'button';
-    send.textContent = '分享';
-    send.setAttribute('aria-label', `分享给 ${bot.name || 'BOT'}`);
+    send.textContent = t('分享');
+    send.setAttribute('aria-label', t('分享给 {name}', { name: bot.name || 'BOT' }));
     const nativeButton = area.template.querySelector('button,[role="button"]');
     const style = nativeButton && window.getComputedStyle(nativeButton);
     send.className = '';

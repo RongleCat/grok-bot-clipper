@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.js';
 export function displayBot(bot) {
   return bot
     ? {
@@ -25,6 +26,7 @@ export function createSocialService(deps) {
       bots = await deps.bots();
     return {
       authenticated: Boolean(scope?.accountId),
+      language: settings.language || 'auto',
       askBeforeSend: settings.askBeforeSend,
       primary: displayBot(bots.find((b) => b.id === settings.defaultBotId)),
       favorites: (settings.favorites || [])
@@ -115,12 +117,13 @@ export function createSocialService(deps) {
       selectedBotId: row.selectedBotId || settings.defaultBotId || '',
       askBeforeSend: settings.askBeforeSend,
       theme: settings.theme || 'system',
+      language: settings.language || 'auto',
       post: {
         title:
           row.record?.title ||
           row.record?.text?.split('\n')[0]?.slice(0, 100) ||
           row.post?.title ||
-          '分享内容',
+          t('分享内容'),
         url: row.record?.url || row.post?.url || '',
       },
       jobId: row.jobId,
@@ -139,7 +142,7 @@ export function createSocialService(deps) {
         ...row,
         selectedBotId: botId,
         post: {
-          title: row.record.title || row.record.text?.slice(0, 100) || '分享内容',
+          title: row.record.title || row.record.text?.slice(0, 100) || t('分享内容'),
           url: row.record.url,
         },
         record: null,

@@ -1,3 +1,13 @@
+import {
+  t,
+  setLocale,
+  getLocale,
+  getCatalog,
+  initI18n,
+  supportedLocales,
+  formatDate,
+  formatNumber,
+} from '../i18n/index.js';
 import { api, isFirefox, openSidePanel, shortcutsURL } from '../platform/browser.js';
 import { trackSettingsNavigation } from './navigation.js';
 import { escapeHTML as esc, field, settingsSection, disclosure } from './components.js';
@@ -31,79 +41,159 @@ document.body.className = isPopup ? 'popup' : isSide ? 'sidepanel' : 'workspace'
 const renderMarkdown = createMarkdownRenderer(window);
 const size = (n) =>
   n >= 1048576
-    ? (n / 1048576).toFixed(1) + ' MB'
+    ? formatNumber(n / 1048576, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' MB'
     : n >= 1024
-      ? Math.ceil(n / 1024) + ' KB'
-      : n + ' B';
+      ? formatNumber(Math.ceil(n / 1024)) + ' KB'
+      : formatNumber(n) + ' B';
 const labels = {
-  queued: '等待发送',
-  uploading: '上传中',
-  submitting: '正在提交',
-  accepted: '已受理',
-  uncertain: '投递待确认',
-  failed: '发送失败',
-  cancelled: '已取消',
+  get queued() {
+    return t('等待发送');
+  },
+  get uploading() {
+    return t('上传中');
+  },
+  get submitting() {
+    return t('正在提交');
+  },
+  get accepted() {
+    return t('已受理');
+  },
+  get uncertain() {
+    return t('投递待确认');
+  },
+  get failed() {
+    return t('发送失败');
+  },
+  get cancelled() {
+    return t('已取消');
+  },
 };
 const errors = {
-  LOGIN_REQUIRED: '请先登录',
-  INVALID_SOCIAL_POST: '无法确认帖子身份，请打开帖子详情后重试',
-  SOCIAL_POST_NOT_LOADED: '帖子还未加载完整，请刷新原页面后重试',
-  BOT_REQUIRED: '请选择 BOT',
-  BOT_UNAVAILABLE: '所选 BOT 不可用，请重新选择',
-  PAGE_ACCESS_REQUIRED: '需要此页面的访问权限',
-  SELECT_WEBPAGE_FIRST: '请先打开要采集的网页',
-  MATERIAL_REQUIRED: '请先添加材料或输入说明',
-  ATTACHMENT_TOO_LARGE: '附件超过大小上限',
-  ATTACHMENT_SIZE_INVALID: '附件为空或超过 128 MB',
-  ACCOUNT_AUTH_FAILED: '授权已失效，请重新登录',
-  ACCOUNT_CHANGED: '账户已切换，任务已暂停',
-  INVALID_CAPTURE_REGION: '选区无效，请重新框选',
-  CAPTURE_VIEWPORT_CHANGED: '框选后页面尺寸或滚动位置发生变化，请重试',
-  CAPTURE_TAB_CHANGED: '截图期间页面已切换，请重试',
-  UPLOAD_MODE_UNAVAILABLE: '服务端暂未提供可用上传方式',
-  ATTACHMENT_HOST_UNAVAILABLE: 'BOT 文件主机暂未就绪，请稍后重试',
-  SEND_UNCONFIRMED: '投递结果待确认，请检查状态',
-  UPLOAD_PUT_FAILED: '附件上传失败，请检查网站访问权限后重试',
-  LOGIN_TIMED_OUT: '授权超时，请重新登录',
-  LOGIN_POLL_FAILED: '无法完成授权，请重试',
-  CONTEXT_INDEX_TOO_LARGE: '材料目录超过文本预算，请提高预算或分批发送',
-  INSTRUCTION_TOO_LARGE: '说明超过文本预算，请缩短说明',
-  PACKAGE_TOO_LARGE: '材料总量超过 512 MB，请分批发送',
+  get LOGIN_REQUIRED() {
+    return t('请先登录');
+  },
+  get INVALID_SOCIAL_POST() {
+    return t('无法确认帖子身份，请打开帖子详情后重试');
+  },
+  get SOCIAL_POST_NOT_LOADED() {
+    return t('帖子还未加载完整，请刷新原页面后重试');
+  },
+  get BOT_REQUIRED() {
+    return t('请选择 BOT');
+  },
+  get BOT_UNAVAILABLE() {
+    return t('所选 BOT 不可用，请重新选择');
+  },
+  get PAGE_ACCESS_REQUIRED() {
+    return t('需要此页面的访问权限');
+  },
+  get SELECT_WEBPAGE_FIRST() {
+    return t('请先打开要采集的网页');
+  },
+  get MATERIAL_REQUIRED() {
+    return t('请先添加材料或输入说明');
+  },
+  get ATTACHMENT_TOO_LARGE() {
+    return t('附件超过大小上限');
+  },
+  get ATTACHMENT_SIZE_INVALID() {
+    return t('附件为空或超过 128 MB');
+  },
+  get ACCOUNT_AUTH_FAILED() {
+    return t('授权已失效，请重新登录');
+  },
+  get ACCOUNT_CHANGED() {
+    return t('账户已切换，任务已暂停');
+  },
+  get INVALID_CAPTURE_REGION() {
+    return t('选区无效，请重新框选');
+  },
+  get CAPTURE_VIEWPORT_CHANGED() {
+    return t('框选后页面尺寸或滚动位置发生变化，请重试');
+  },
+  get CAPTURE_TAB_CHANGED() {
+    return t('截图期间页面已切换，请重试');
+  },
+  get UPLOAD_MODE_UNAVAILABLE() {
+    return t('服务端暂未提供可用上传方式');
+  },
+  get ATTACHMENT_HOST_UNAVAILABLE() {
+    return t('BOT 文件主机暂未就绪，请稍后重试');
+  },
+  get SEND_UNCONFIRMED() {
+    return t('投递结果待确认，请检查状态');
+  },
+  get UPLOAD_PUT_FAILED() {
+    return t('附件上传失败，请检查网站访问权限后重试');
+  },
+  get LOGIN_TIMED_OUT() {
+    return t('授权超时，请重新登录');
+  },
+  get LOGIN_POLL_FAILED() {
+    return t('无法完成授权，请重试');
+  },
+  get CONTEXT_INDEX_TOO_LARGE() {
+    return t('材料目录超过文本预算，请提高预算或分批发送');
+  },
+  get INSTRUCTION_TOO_LARGE() {
+    return t('说明超过文本预算，请缩短说明');
+  },
+  get PACKAGE_TOO_LARGE() {
+    return t('材料总量超过 512 MB，请分批发送');
+  },
 };
 const rpcActionLabels = {
-  settings: '保存设置',
-  'bots.refresh': '刷新 BOT',
-  'composer.open.saved': '打开草稿',
-  'basket.remove': '移除材料',
-  'sidepanel.navigate': '打开侧栏对话',
-  'draft.send': '发送草稿',
-  'capture.target': '读取当前网页',
-  state: '读取扩展状态',
+  get settings() {
+    return t('保存设置');
+  },
+  get ['bots.refresh']() {
+    return t('刷新 BOT');
+  },
+  get ['composer.open.saved']() {
+    return t('打开草稿');
+  },
+  get ['basket.remove']() {
+    return t('移除材料');
+  },
+  get ['sidepanel.navigate']() {
+    return t('打开侧栏对话');
+  },
+  get ['draft.send']() {
+    return t('发送草稿');
+  },
+  get ['capture.target']() {
+    return t('读取当前网页');
+  },
+  get state() {
+    return t('读取扩展状态');
+  },
 };
 const errorText = (error) => {
-  const code = String(error?.message ?? error ?? '操作失败');
+  const code = String(error?.message ?? error ?? t('操作失败'));
   if (code === 'UNKNOWN_ACTION')
-    return `后台未识别“${rpcActionLabels[error?.action] || '此操作'}”，请重新加载扩展后重试`;
+    return t('后台未识别“{action}”，请重新加载扩展后重试', {
+      action: rpcActionLabels[error?.action] || t('此操作'),
+    });
   return (
     errors[code] ||
     (/^UPLOAD_REFUSED_/.test(code)
-      ? '服务端拒绝此附件，请检查文件大小、类型与 BOT 存储空间'
+      ? t('服务端拒绝此附件，请检查文件大小、类型与 BOT 存储空间')
       : /^UPLOAD_/.test(code)
-        ? '附件上传未完成，请重试'
-        : code)
+        ? t('附件上传未完成，请重试')
+        : t('操作失败（{code}）', { code }))
   );
 };
 const shortTime = (n) =>
-  new Intl.DateTimeFormat('zh-CN', {
+  formatDate(n || Date.now(), {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(n || Date.now());
+  });
 const avatar = (id, large = false, renderSize = large ? 76 : 48) =>
   `<span class="avatar ${large ? 'large' : ''}" data-avatar="${esc(id)}" data-size="${renderSize}" aria-hidden="true"></span>`;
 const btn = (action, title, i, cls = 'icon-button') =>
-  `<button class="${cls}" data-action="${action}" title="${title}" aria-label="${title}">${icon(i)}</button>`;
+  `<button class="${cls}" data-action="${action}" title="${esc(title)}" aria-label="${esc(title)}">${icon(i)}</button>`;
 const bot = () =>
   model.bots.find((b) => b.id === (draft?.botId || selectedBotId || model.settings.defaultBotId));
 async function rpc(type, extra = {}) {
@@ -152,12 +242,12 @@ function mount() {
 }
 function switcher(compact = false) {
   const b = bot();
-  return `<button class="bot-switch ${compact ? 'bot-switch--compact' : ''}" data-action="pick-bot" aria-label="选择 BOT：${esc(b?.name || '未选择')}" title="${esc(b?.name || '选择 BOT')}">${b ? avatar(b.id, false, compact ? 32 : 48) : icon('plus', compact ? 24 : 36)}<span class="bot-name">${esc(b?.name || '选择 BOT')}</span><span class="chev">${icon('chevron', 18)}</span></button>`;
+  return `<button class="bot-switch ${compact ? 'bot-switch--compact' : ''}" data-action="pick-bot" aria-label="${esc(t('选择 BOT：{name}', { name: b?.name || t('未选择') }))}" title="${esc(b?.name || t('选择 BOT'))}">${b ? avatar(b.id, false, compact ? 32 : 48) : icon('plus', compact ? 24 : 36)}<span class="bot-name">${esc(b?.name || t('选择 BOT'))}</span><span class="chev">${icon('chevron', 18)}</span></button>`;
 }
 function top() {
   const action = (id, label, glyph, active = false) =>
-    `<button class="icon-button toolbar-action" data-action="${id}" title="${label}" aria-label="${label}" ${active ? 'aria-current="page"' : ''}>${icon(glyph, 18)}<span>${label}</span></button>`;
-  return `<header class="topbar">${model.authenticated ? switcher(true) : '<span class="brand">Grok Bot Clipper</span>'}<div class="top-actions">${!['home', 'compose', 'replies'].includes(view) ? btn('home', '返回首页', 'back') : ''}${action('resume-compose', '草稿箱', 'drafts', view === 'drafts' || view === 'compose')}${view === 'compose' ? action('preview-packet', '发送预览', 'preview') : ''}${action('replies', 'BOT 对话', 'reply', view === 'replies')}${btn('settings', '设置', 'settings')}</div></header>`;
+    `<button class="icon-button toolbar-action" data-action="${id}" title="${esc(label)}" aria-label="${esc(label)}" ${active ? 'aria-current="page"' : ''}>${icon(glyph, 18)}<span>${esc(label)}</span></button>`;
+  return `<header class="topbar">${model.authenticated ? switcher(true) : '<span class="brand">Grok Bot Clipper</span>'}<div class="top-actions">${!['home', 'compose', 'replies'].includes(view) ? btn('home', t('返回首页'), 'back') : ''}${action('resume-compose', t('草稿箱'), 'drafts', view === 'drafts' || view === 'compose')}${view === 'compose' ? action('preview-packet', t('发送预览'), 'preview') : ''}${action('replies', t('BOT 对话'), 'reply', view === 'replies')}${btn('settings', t('设置'), 'settings')}</div></header>`;
 }
 function shell(content, footer = '', head = '') {
   stopSettingsNavigation();
@@ -168,7 +258,7 @@ function shell(content, footer = '', head = '') {
     api.storage.session.set(saved).catch(() => {});
   }
   document.body.dataset.view = view;
-  root.innerHTML = `<div class="shell">${top()}${head}<main id="panel">${content}</main>${footer}</div><dialog id="bot-dialog" aria-label="选择 BOT"></dialog><div id="toast" class="toast" role="status" aria-live="polite"></div>`;
+  root.innerHTML = `<div class="shell">${top()}${head}<main id="panel">${content}</main>${footer}</div><dialog id="bot-dialog" aria-label="${esc(t('选择 BOT'))}"></dialog><div id="toast" class="toast" role="status" aria-live="polite"></div>`;
   const dialog = root.querySelector('dialog');
   dialog.addEventListener('close', () => {
     if (!dialog.open) releaseAvatars(dialog);
@@ -177,13 +267,13 @@ function shell(content, footer = '', head = '') {
 }
 function authView() {
   shell(
-    `<div class="login">${avatar('brand', true)}<h1>Grok Bot Clipper</h1>${model.loginPending ? `<button class="primary loading" disabled><span class="spinner"></span>等待浏览器授权</button><div class="bottom-actions"><button class="text-button" data-action="login-cancel">取消</button></div>` : `<button class="primary" data-action="login">授权登录 ${icon('arrow', 17)}</button>`}${model.loginError ? `<p class="notice error" role="alert">${esc(errorText(model.loginError))}</p>` : ''}</div>`,
+    `<div class="login">${avatar('brand', true)}<h1>Grok Bot Clipper</h1>${model.loginPending ? `<button class="primary loading" disabled><span class="spinner"></span>${esc(t('等待浏览器授权'))}</button><div class="bottom-actions"><button class="text-button" data-action="login-cancel">${esc(t('取消'))}</button></div>` : `<button class="primary" data-action="login">${esc(t('授权登录'))} ${icon('arrow', 17)}</button>`}${model.loginError ? `<p class="notice error" role="alert">${esc(errorText(model.loginError))}</p>` : ''}</div>`,
   );
   const hero = root.querySelector('[data-avatar="brand"]');
   if (hero) mountAvatars(root, [{ id: 'brand', avatarShape: 'blob', avatarColor: 'black' }]);
 }
 function toggle(key, value, label) {
-  return `<button class="toggle" role="switch" aria-checked="${Boolean(value)}" id="setting-${key}" data-toggle="${key}" aria-label="${label}"></button>`;
+  return `<button class="toggle" role="switch" aria-checked="${Boolean(value)}" id="setting-${key}" data-toggle="${key}" aria-label="${esc(label)}"></button>`;
 }
 function commandKey(name) {
   const shortcut = shortcuts.find((c) => c.name === name)?.shortcut;
@@ -206,57 +296,60 @@ function commandKey(name) {
 function home() {
   const groups = [
     [
-      '截图',
+      t('截图'),
       [
-        ['capture-region', '框选截图', 'capture'],
-        ['capture-viewport', '可见区域', 'viewport'],
-        ['capture-full', '长截图', 'fullpage'],
+        ['capture-region', t('框选截图'), 'capture'],
+        ['capture-viewport', t('可见区域'), 'viewport'],
+        ['capture-full', t('长截图'), 'fullpage'],
       ],
     ],
     [
-      '网页与文件',
+      t('网页与文件'),
       [
-        ['save-page', '保存网页', 'page'],
-        ['element', '采集元素', 'element'],
-        ['tabs', '多标签页', 'tabs'],
-        ['video', '视频时间点', 'video'],
-        ['page-basket', '网页入篮', 'basket'],
-        ['file', '添加文件', 'upload'],
+        ['save-page', t('保存网页'), 'page'],
+        ['element', t('采集元素'), 'element'],
+        ['tabs', t('多标签页'), 'tabs'],
+        ['video', t('视频时间点'), 'video'],
+        ['page-basket', t('网页入篮'), 'basket'],
+        ['file', t('添加文件'), 'upload'],
       ],
     ],
     [
-      '材料管理',
+      t('材料管理'),
       [
-        ['basket', `材料篮${model.basket.length ? ' ' + model.basket.length : ''}`, 'basket'],
-        ['history', '发送记录', 'history'],
+        ['basket', t('材料篮') + (model.basket.length ? ' ' + model.basket.length : ''), 'basket'],
+        ['history', t('发送记录'), 'history'],
       ],
     ],
   ];
   shell(
-    `<div class="utility-row"><span>发送前补充说明</span>${toggle('askBeforeSend', model.settings.askBeforeSend, '发送前补充说明')}</div>${groups.map(([title, tools]) => `<section class="tool-group"><h2>${title}</h2><div class="home-tools">${tools.map(([action, label, glyph]) => `<button class="home-tool" data-action="${action}">${icon(glyph, 22)}<span>${label}</span></button>`).join('')}</div></section>`).join('')}`,
+    `<div class="utility-row"><span>${esc(t('发送前补充说明'))}</span>${toggle('askBeforeSend', model.settings.askBeforeSend, t('发送前补充说明'))}</div>${groups.map(([title, tools]) => `<section class="tool-group"><h2>${esc(title)}</h2><div class="home-tools">${tools.map(([action, label, glyph]) => `<button class="home-tool" data-action="${action}">${icon(glyph, 22)}<span>${esc(label)}</span></button>`).join('')}</div></section>`).join('')}`,
   );
 }
 function titleRow(title, actions = '') {
-  return `<div class="row between"><h1>${title}</h1>${actions}</div>`;
+  return `<div class="row between"><h1>${esc(title)}</h1>${actions}</div>`;
 }
 function captureOptions() {
   shell(
-    `${titleRow('采集')}<div class="quick-actions" style="margin-top:20px">${[
-      ['capture-region', '框选截图', 'capture'],
-      ['capture-viewport', '可见区域截图', 'viewport'],
-      ['capture-full', '长截图', 'fullpage'],
-      ['element', '采集元素', 'element'],
-      ['video', '视频时间点', 'video'],
-      ['page-basket', '将网页加入材料篮', 'basket'],
-      ['file', '添加文件', 'upload'],
+    `${titleRow(t('采集'))}<div class="quick-actions" style="margin-top:20px">${[
+      ['capture-region', t('框选截图'), 'capture'],
+      ['capture-viewport', t('可见区域截图'), 'viewport'],
+      ['capture-full', t('长截图'), 'fullpage'],
+      ['element', t('采集元素'), 'element'],
+      ['video', t('视频时间点'), 'video'],
+      ['page-basket', t('将网页加入材料篮'), 'basket'],
+      ['file', t('添加文件'), 'upload'],
     ]
-      .map(([a, t, i]) => `<button class="quick-action" data-action="${a}">${icon(i)}${t}</button>`)
+      .map(
+        ([a, t, i]) =>
+          `<button class="quick-action" data-action="${a}">${icon(i)}${esc(t)}</button>`,
+      )
       .join('')}</div>`,
   );
 }
 function settingsView() {
   const s = model.settings;
-  const botName = (id, fallback = '使用默认 BOT') =>
+  const botName = (id, fallback = t('使用默认 BOT')) =>
     esc(model.bots.find((b) => b.id === id)?.name || fallback);
   const select = (id, key, values, current) =>
     `<select id="${id}" data-setting="${key}" aria-describedby="${id}-hint">${values.map(([v, label]) => `<option value="${v}" ${current === v ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select>`;
@@ -268,49 +361,49 @@ function settingsView() {
       id,
       label,
       description,
-      `<div class="number-control"><input id="${id}" type="number" min="${min}" max="${max}" step="1" data-setting="${key}" value="${value}" aria-describedby="${id}-hint ${id}-error"><span>${unit}</span></div>`,
+      `<div class="number-control"><input id="${id}" type="number" min="${min}" max="${max}" step="1" data-setting="${key}" value="${value}" aria-describedby="${id}-hint ${id}-error"><span>${esc(unit)}</span></div>`,
     );
   const routeField = (action, label) =>
     setting(
       `route-${action}`,
       label,
-      '未单独分配时，使用默认 BOT。',
-      `<div class="route-control"><button id="route-${action}" class="secondary" data-route-pick="action:${action}">${botName(s.actionBots[action])}${icon('chevron', 14)}</button>${s.actionBots[action] ? `<button class="icon-button small" data-reset-route="${action}" aria-label="${label}恢复默认 BOT">${icon('undo', 14)}</button>` : ''}</div>`,
+      t('未单独分配时，使用默认 BOT。'),
+      `<div class="route-control"><button id="route-${action}" class="secondary" data-route-pick="action:${action}">${botName(s.actionBots[action])}${icon('chevron', 14)}</button>${s.actionBots[action] ? `<button class="icon-button small" data-reset-route="${action}" aria-label="${esc(t('{label}恢复默认 BOT', { label }))}">${icon('undo', 14)}</button>` : ''}</div>`,
     );
   const groups = [
     [
       'send',
-      '发送方式',
-      '选择默认接收对象，以及发送前如何补充说明。',
+      t('发送方式'),
+      t('选择默认接收对象，以及发送前如何补充说明。'),
       setting(
         'default-bot',
-        '默认 BOT',
-        '没有指定接收对象时，材料会发送给这个 BOT。',
-        `<button id="default-bot" class="secondary" data-action="pick-default">${botName(s.defaultBotId, '选择 BOT')}${icon('chevron', 14)}</button>`,
+        t('默认 BOT'),
+        t('没有指定接收对象时，材料会发送给这个 BOT。'),
+        `<button id="default-bot" class="secondary" data-action="pick-default">${botName(s.defaultBotId, t('选择 BOT'))}${icon('chevron', 14)}</button>`,
       ) +
         switchField(
           'askBeforeSend',
-          '发送前补充说明',
-          '采集后先打开草稿，确认材料和说明后再发送。',
+          t('发送前补充说明'),
+          t('采集后先打开草稿，确认材料和说明后再发送。'),
         ) +
         setting(
           'composer-surface',
-          '草稿打开位置',
-          '选择在侧栏或独立窗口中编辑草稿。',
+          t('草稿打开位置'),
+          t('选择在侧栏或独立窗口中编辑草稿。'),
           select(
             'composer-surface',
             'composerSurface',
             [
-              ['sidepanel', '浏览器侧栏'],
-              ['window', '独立窗口'],
+              ['sidepanel', t('浏览器侧栏')],
+              ['window', t('独立窗口')],
             ],
             s.composerSurface || 'sidepanel',
           ),
         ) +
         setting(
           'task-preset',
-          '默认任务',
-          '为新材料预选处理方式，发送时仍可修改。',
+          t('默认任务'),
+          t('为新材料预选处理方式，发送时仍可修改。'),
           select(
             'task-preset',
             'taskPreset',
@@ -321,52 +414,56 @@ function settingsView() {
     ],
     [
       'capture',
-      '采集与上下文',
-      '决定附带哪些内容，以及材料的大小限制。',
+      t('采集与上下文'),
+      t('决定附带哪些内容，以及材料的大小限制。'),
       setting(
         'screenshot-mode',
-        '默认截图方式',
-        '通过快捷键或默认截图入口触发时使用。',
+        t('默认截图方式'),
+        t('通过快捷键或默认截图入口触发时使用。'),
         select(
           'screenshot-mode',
           'screenshotMode',
           [
-            ['region', '框选截图'],
-            ['viewport', '可见区域'],
-            ['full', '长截图'],
+            ['region', t('框选截图')],
+            ['viewport', t('可见区域')],
+            ['full', t('长截图')],
           ],
           s.screenshotMode,
         ),
       ) +
-        switchField('includeSource', '来源与采集时间', '附带网页链接、标题和采集时间，方便追溯。') +
-        switchField('includeNearby', '选区附近段落', '采集选中文字时，附带附近段落。') +
+        switchField(
+          'includeSource',
+          t('来源与采集时间'),
+          t('附带网页链接、标题和采集时间，方便追溯。'),
+        ) +
+        switchField('includeNearby', t('选区附近段落'), t('采集选中文字时，附带附近段落。')) +
         switchField(
           'includePageContext',
-          '选区所在页面正文',
-          '同时提供整页正文，帮助 BOT 理解上下文。',
+          t('选区所在页面正文'),
+          t('同时提供整页正文，帮助 BOT 理解上下文。'),
         ) +
         switchField(
           'archiveMHTML',
-          '网页归档',
+          t('网页归档'),
           isFirefox
-            ? '额外附带正文 HTML 文件，不包含原网页布局及未加载媒体。'
-            : '额外附带 MHTML 文件，保留网页原貌。',
+            ? t('额外附带正文 HTML 文件，不包含原网页布局及未加载媒体。')
+            : t('额外附带 MHTML 文件，保留网页原貌。'),
         ) +
         numberField(
           'text-budget',
           'maxTextBytes',
-          '消息文本上限',
-          '材料与说明合计的 UTF-8 文本预算。',
+          t('消息文本上限'),
+          t('材料与说明合计的 UTF-8 文本预算。'),
           s.maxTextBytes,
           4096,
           120000,
-          '字节',
+          t('字节'),
         ) +
         numberField(
           'file-limit',
           'maxAttachmentMB',
-          '单个附件上限',
-          '超过此大小的附件不会加入发送任务。',
+          t('单个附件上限'),
+          t('超过此大小的附件不会加入发送任务。'),
           s.maxAttachmentBytes / 1048576,
           1,
           128,
@@ -375,8 +472,8 @@ function settingsView() {
         numberField(
           'height-limit',
           'maxScrollHeight',
-          '长截图高度上限',
-          '限制长页面截图的最大高度。',
+          t('长截图高度上限'),
+          t('限制长页面截图的最大高度。'),
           s.maxScrollHeight,
           1000,
           30000,
@@ -385,91 +482,102 @@ function settingsView() {
     ],
     [
       'routing',
-      'BOT 路由',
-      '按材料类型或网站自动分配接收对象。',
-      routeField('screenshot', '截图接收 BOT') +
-        routeField('page', '网页接收 BOT') +
-        `<div class="rules-heading"><div><h3>网站规则</h3><p class="field-description">匹配网站域名后，优先发送给指定 BOT。</p></div><button class="secondary" data-action="add-rule">${icon('plus', 14)}添加规则</button></div><div id="rules">${(s.rules || []).map((r, i) => `<div class="rules-row"><label class="sr-only" for="rule-${i}">网站域名</label><input id="rule-${i}" data-rule-host="${i}" aria-label="网站域名" value="${esc(r.host)}" placeholder="example.com"><button class="secondary" data-route-pick="rule:${i}">${botName(r.botId, '选择 BOT')}${icon('chevron', 14)}</button><button class="icon-button small" data-delete-rule="${i}" aria-label="删除 ${esc(r.host)} 规则">${icon('close', 14)}</button></div>`).join('') || '<p class="rules-empty">还没有网站规则。添加域名，为常用网站指定 BOT。</p>'}</div>`,
+      t('BOT 路由'),
+      t('按材料类型或网站自动分配接收对象。'),
+      routeField('screenshot', t('截图接收 BOT')) +
+        routeField('page', t('网页接收 BOT')) +
+        `<div class="rules-heading"><div><h3>${esc(t('网站规则'))}</h3><p class="field-description">${esc(t('匹配网站域名后，优先发送给指定 BOT。'))}</p></div><button class="secondary" data-action="add-rule">${icon('plus', 14)}${esc(t('添加规则'))}</button></div><div id="rules">${(s.rules || []).map((r, i) => `<div class="rules-row"><label class="sr-only" for="rule-${i}">${esc(t('网站域名'))}</label><input id="rule-${i}" data-rule-host="${i}" aria-label="${esc(t('网站域名'))}" value="${esc(r.host)}" placeholder="example.com"><button class="secondary" data-route-pick="rule:${i}">${botName(r.botId, t('选择 BOT'))}${icon('chevron', 14)}</button><button class="icon-button small" data-delete-rule="${i}" aria-label="${esc(t('删除 {host} 规则', { host: r.host }))}">${icon('close', 14)}</button></div>`).join('') || `<p class="rules-empty">${esc(t('还没有网站规则。添加域名，为常用网站指定 BOT。'))}</p>`}</div>`,
     ],
     [
       'local',
-      '外观与本机数据',
-      '调整显示方式、材料保留时间和访问权限。',
+      t('外观与本机数据'),
+      t('调整显示方式、材料保留时间和访问权限。'),
       setting(
-        'theme',
-        '外观',
-        '浅色、深色或跟随系统。',
+        'language',
+        t('界面语言'),
+        t('自动跟随浏览器，或选择你偏好的语言。'),
         select(
-          'theme',
-          'theme',
-          [
-            ['system', '跟随系统'],
-            ['light', '浅色'],
-            ['dark', '深色'],
-          ],
-          s.theme,
+          'language',
+          'language',
+          [['auto', t('跟随浏览器')], ...supportedLocales.map(({ code, name }) => [code, name])],
+          s.language || 'auto',
         ),
       ) +
+        setting(
+          'theme',
+          t('外观'),
+          t('浅色、深色或跟随系统。'),
+          select(
+            'theme',
+            'theme',
+            [
+              ['system', t('跟随系统')],
+              ['light', t('浅色')],
+              ['dark', t('深色')],
+            ],
+            s.theme,
+          ),
+        ) +
         numberField(
           'retention',
           'retentionDays',
-          '材料保留时间',
-          '过期的本机材料会自动清理。',
+          t('材料保留时间'),
+          t('过期的本机材料会自动清理。'),
           s.retentionDays,
           1,
           90,
-          '天',
+          t('天'),
         ) +
-        switchField('persistLogin', '浏览器重启后保持登录', '在这台浏览器中保留登录状态。') +
+        switchField('persistLogin', t('浏览器重启后保持登录'), t('在这台浏览器中保留登录状态。')) +
         setting(
           'permissions-button',
-          '跨网站采集权限',
-          '允许采集多个网站的页面内容。',
-          '<button id="permissions-button" class="secondary" data-action="permissions">管理授权</button>',
+          t('跨网站采集权限'),
+          t('允许采集多个网站的页面内容。'),
+          `<button id="permissions-button" class="secondary" data-action="permissions">${esc(t('管理授权'))}</button>`,
         ),
     ],
     [
       'shortcuts',
-      '快捷键',
-      '在任意网页快速开始采集或打开命令。',
+      t('快捷键'),
+      t('在任意网页快速开始采集或打开命令。'),
       [
-        ['capture-region', '框选截图'],
-        ['send-page', '保存网页'],
-        ['quick-command', '快捷命令'],
+        ['capture-region', t('框选截图')],
+        ['send-page', t('保存网页')],
+        ['quick-command', t('快捷命令')],
       ]
         .map(
           ([id, label]) =>
-            `<div class="form-row"><span>${label}</span>${commandKey(id) || '<span class="subtle">未设置</span>'}</div>`,
+            `<div class="form-row"><span>${esc(label)}</span>${commandKey(id) || `<span class="subtle">${esc(t('未设置'))}</span>`}</div>`,
         )
         .join('') +
         '<div class="section-actions"><button class="secondary" data-action="shortcuts">' +
-        (isFirefox ? '查看快捷键设置方法' : '打开浏览器快捷键设置') +
+        (isFirefox ? t('查看快捷键设置方法') : t('打开浏览器快捷键设置')) +
         icon('arrow', 14) +
         '</button></div>',
     ],
     [
       'account',
-      '账户与工作区',
-      '管理当前账户、工作区和 BOT 列表。',
+      t('账户与工作区'),
+      t('管理当前账户、工作区和 BOT 列表。'),
       setting(
         'account-name',
-        '当前账户',
-        '当前已授权的浏览器账户。',
-        `<span id="account-name" class="account-name">${esc(model.account?.name || '已登录')}</span>`,
+        t('当前账户'),
+        t('当前已授权的浏览器账户。'),
+        `<span id="account-name" class="account-name">${esc(model.account?.name || t('已登录'))}</span>`,
       ) +
         (model.teams?.length
           ? setting(
               'workspace',
-              '工作区',
-              '切换后，BOT 列表会同步更新。',
-              `<select id="workspace" data-workspace><option value="personal" ${model.workspaceId === 'personal' ? 'selected' : ''}>个人</option>${model.teams.map((t) => `<option value="${esc(t.id)}" ${model.workspaceId === String(t.id) ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>`,
+              t('工作区'),
+              t('切换后，BOT 列表会同步更新。'),
+              `<select id="workspace" data-workspace><option value="personal" ${model.workspaceId === 'personal' ? 'selected' : ''}>${esc(t('个人'))}</option>${model.teams.map((t) => `<option value="${esc(t.id)}" ${model.workspaceId === String(t.id) ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>`,
             )
           : '') +
-        `<div class="section-actions"><button class="secondary" data-action="bots-refresh">${icon('refresh', 14)}刷新 BOT 列表</button><button class="danger" data-action="logout">退出登录</button></div>${model.rosterTruncated ? '<p class="warning">服务端返回的 BOT 列表不完整。</p>' : ''}`,
+        `<div class="section-actions"><button class="secondary" data-action="bots-refresh">${icon('refresh', 14)}${esc(t('刷新 BOT 列表'))}</button><button class="danger" data-action="logout">${esc(t('退出登录'))}</button></div>${model.rosterTruncated ? `<p class="warning">${esc(t('服务端返回的 BOT 列表不完整。'))}</p>` : ''}`,
     ],
   ];
   shell(
-    `<div class="settings-title"><div><h1>设置</h1><p>为你的采集和对话设置默认行为。</p></div><span id="settings-save-state" role="status">修改后自动保存</span></div><div class="settings-layout"><nav class="settings-nav" aria-label="设置分类">${groups.map(([id, title], i) => `<a href="#settings-${id}" ${i === 0 ? 'aria-current="location"' : ''}>${title}</a>`).join('')}</nav><div class="settings-content">${groups.map(([id, title, description, content]) => settingsSection(id, title, description, content)).join('')}</div></div>`,
+    `<div class="settings-title"><div><h1>${esc(t('设置'))}</h1><p>${esc(t('为你的采集和对话设置默认行为。'))}</p></div><span id="settings-save-state" role="status">${esc(t('修改后自动保存'))}</span></div><div class="settings-layout"><nav class="settings-nav" aria-label="${esc(t('设置分类'))}">${groups.map(([id, title], i) => `<a href="#settings-${id}" ${i === 0 ? 'aria-current="location"' : ''}>${esc(title)}</a>`).join('')}</nav><div class="settings-content">${groups.map(([id, title, description, content]) => settingsSection(id, title, description, content)).join('')}</div></div>`,
   );
   stopSettingsNavigation = trackSettingsNavigation({
     nav: root.querySelector('.settings-nav'),
@@ -479,49 +587,66 @@ function settingsView() {
 }
 function settingsSaved() {
   const status = document.querySelector('#settings-save-state');
-  if (status) status.textContent = '已自动保存';
+  if (status) status.textContent = t('已自动保存');
 }
 const presetLabels = {
-  '': '直接发送',
-  summary: '总结',
-  explain: '解释',
-  compare: '比较',
-  notes: '笔记',
-  review: '审查',
-  translate: '翻译',
+  get ['']() {
+    return t('直接发送');
+  },
+  get summary() {
+    return t('总结');
+  },
+  get explain() {
+    return t('解释');
+  },
+  get compare() {
+    return t('比较');
+  },
+  get notes() {
+    return t('笔记');
+  },
+  get review() {
+    return t('审查');
+  },
+  get translate() {
+    return t('翻译');
+  },
 };
 function presetOptions(selected) {
   return PRESETS.map(
     ([id]) =>
-      `<option value="${id}" ${selected === id ? 'selected' : ''}>${presetLabels[id]}</option>`,
+      `<option value="${id}" ${selected === id ? 'selected' : ''}>${esc(presetLabels[id])}</option>`,
   ).join('');
 }
 function basketView() {
   shell(
-    `${titleRow('材料篮', `<span class="count">${model.basket.length}</span>`)}${model.basket.length ? model.basket.map((i) => `<article class="list-item"><div class="row between"><span class="list-title">${esc(i.title || '材料')}</span><button class="icon-button small" data-remove-material="${esc(i.id)}" aria-label="移出材料篮">${icon('close', 15)}</button></div><div class="list-meta">${esc(i.url)}</div><div class="list-meta">${shortTime(i.createdAt)}${i.attachmentCount ? ' · ' + i.attachmentCount + ' 个附件' : ''}</div></article>`).join('') : '<div class="empty">材料篮为空</div>'}<div class="bottom-actions"><button class="secondary" data-action="file">${icon('plus', 16)}添加文件</button><button class="primary" data-action="basket-compose" ${model.basket.length ? '' : 'disabled'}>组合发送 ${icon('send', 16)}</button></div>`,
+    `${titleRow(t('材料篮'), `<span class="count">${model.basket.length}</span>`)}${model.basket.length ? model.basket.map((i) => `<article class="list-item"><div class="row between"><span class="list-title">${esc(i.title || t('材料'))}</span><button class="icon-button small" data-remove-material="${esc(i.id)}" aria-label="${esc(t('移出材料篮'))}">${icon('close', 15)}</button></div><div class="list-meta">${esc(i.url)}</div><div class="list-meta">${shortTime(i.createdAt)}${i.attachmentCount ? ' · ' + esc(t('{count} 个附件', { count: i.attachmentCount })) : ''}</div></article>`).join('') : `<div class="empty">${esc(t('材料篮为空'))}</div>`}<div class="bottom-actions"><button class="secondary" data-action="file">${icon('plus', 16)}${esc(t('添加文件'))}</button><button class="primary" data-action="basket-compose" ${model.basket.length ? '' : 'disabled'}>${esc(t('组合发送'))} ${icon('send', 16)}</button></div>`,
   );
 }
 function historyView() {
   shell(
-    `${titleRow('发送记录')}${model.jobs.length ? model.jobs.map((j) => `<article class="list-item"><div class="list-title">${esc(j.title)}</div><div class="list-meta">${esc(j.botName || 'BOT')} · ${shortTime(j.createdAt)} · ${j.attachmentCount} 个附件</div><div class="row between" style="margin-top:8px"><span class="subtle ${j.state === 'failed' ? 'error' : ''}">${labels[j.state] || esc(j.state)}</span><div class="item-actions">${j.state === 'failed' ? `<button class="text-button" data-retry-job="${j.id}">重试</button>` : ''}${j.state === 'uncertain' ? `<button class="text-button" data-check-job="${j.id}">检查状态</button>` : ''}<button class="text-button" data-open-job="${j.id}">详情</button></div></div>${j.error ? `<div class="warning">${esc(errorText(j.error))}${j.limitBytes ? '（服务端上限 ' + size(j.limitBytes) + '）' : ''}</div>` : ''}</article>`).join('') : '<div class="empty">还没有发送记录</div>'}`,
+    `${titleRow(t('发送记录'))}${model.jobs.length ? model.jobs.map((j) => `<article class="list-item"><div class="list-title">${esc(j.title)}</div><div class="list-meta">${esc(j.botName || 'BOT')} · ${shortTime(j.createdAt)} · ${esc(t('{count} 个附件', { count: j.attachmentCount }))}</div><div class="row between" style="margin-top:8px"><span class="subtle ${j.state === 'failed' ? 'error' : ''}">${esc(labels[j.state] || j.state)}</span><div class="item-actions">${j.state === 'failed' ? `<button class="text-button" data-retry-job="${j.id}">${esc(t('重试'))}</button>` : ''}${j.state === 'uncertain' ? `<button class="text-button" data-check-job="${j.id}">${esc(t('检查状态'))}</button>` : ''}<button class="text-button" data-open-job="${j.id}">${esc(t('详情'))}</button></div></div>${j.error ? `<div class="warning">${esc(errorText(j.error))}${j.limitBytes ? esc(t('（服务端上限 {size}）', { size: size(j.limitBytes) })) : ''}</div>` : ''}</article>`).join('') : `<div class="empty">${esc(t('还没有发送记录'))}</div>`}`,
   );
 }
 async function tabsView() {
-  shell(`${titleRow('选择标签页')}<div class="notice"><span class="spinner"></span></div>`);
+  shell(`${titleRow(t('选择标签页'))}<div class="notice"><span class="spinner"></span></div>`);
   const tabs = await rpc('tabs');
   document.querySelector('#panel').innerHTML =
-    `${titleRow('选择标签页')}<div class="tabs-list">${tabs.map((t) => `<label class="tab-choice"><input type="checkbox" name="tab" value="${t.id}" ${t.id === sourceTabId ? 'checked' : ''}><span><span class="list-title">${esc(t.title || t.url)}</span><div class="list-meta">${esc(t.url)}</div></span></label>`).join('')}</div><div class="bottom-actions"><button class="primary" data-action="tabs-capture">采集所选网页</button></div>`;
+    `${titleRow(t('选择标签页'))}<div class="tabs-list">${tabs.map((t) => `<label class="tab-choice"><input type="checkbox" name="tab" value="${t.id}" ${t.id === sourceTabId ? 'checked' : ''}><span><span class="list-title">${esc(t.title || t.url)}</span><div class="list-meta">${esc(t.url)}</div></span></label>`).join('')}</div><div class="bottom-actions"><button class="primary" data-action="tabs-capture">${esc(t('采集所选网页'))}</button></div>`;
 }
 function quickView() {
   shell(
     `${switcher()}<div class="quick-actions">${[
-      ['screenshot', '截图', 'capture'],
-      ['save-page', '保存网页', 'page'],
-      ['element', '采集元素', 'element'],
-      ['tabs', '多标签页', 'tabs'],
-      ['basket', '材料篮', 'basket'],
+      ['screenshot', t('截图'), 'capture'],
+      ['save-page', t('保存网页'), 'page'],
+      ['element', t('采集元素'), 'element'],
+      ['tabs', t('多标签页'), 'tabs'],
+      ['basket', t('材料篮'), 'basket'],
     ]
-      .map(([a, t, i]) => `<button class="quick-action" data-action="${a}">${icon(i)}${t}</button>`)
+      .map(
+        ([a, t, i]) =>
+          `<button class="quick-action" data-action="${a}">${icon(i)}${esc(t)}</button>`,
+      )
       .join('')}</div>`,
   );
 }
@@ -535,14 +660,14 @@ async function draftsView() {
     )
     .sort((a, b) => b.updatedAt - a.updatedAt);
   shell(
-    `${titleRow('草稿箱')}<p class="page-description">尚未发送的材料与说明。打开草稿可继续编辑，再确认发送。</p>${drafts.length ? drafts.map((d) => `<button class="draft-row" data-resume-draft="${esc(d.id)}"><span class="list-title">${esc(model.bots.find((b) => b.id === d.botId)?.name || '选择 BOT')}</span><span class="list-meta">${esc(d.instruction || '待补充的材料')}</span><span class="subtle">${shortTime(d.updatedAt)}</span>${icon('chevron', 18)}</button>`).join('') : '<div class="empty">暂无草稿</div>'}`,
+    `${titleRow(t('草稿箱'))}<p class="page-description">${esc(t('尚未发送的材料与说明。打开草稿可继续编辑，再确认发送。'))}</p>${drafts.length ? drafts.map((d) => `<button class="draft-row" data-resume-draft="${esc(d.id)}"><span class="list-title">${esc(model.bots.find((b) => b.id === d.botId)?.name || t('选择 BOT'))}</span><span class="list-meta">${esc(d.instruction || t('待补充的材料'))}</span><span class="subtle">${shortTime(d.updatedAt)}</span>${icon('chevron', 18)}</button>`).join('') : `<div class="empty">${esc(t('暂无草稿'))}</div>`}`,
   );
 }
 async function composeView() {
   if (!draft) {
     draft = await get('drafts', q.get('draft'));
     if (!draft) {
-      shell('<div class="empty">草稿不存在或已过期</div>');
+      shell(`<div class="empty">${esc(t('草稿不存在或已过期'))}</div>`);
       return;
     }
   }
@@ -563,8 +688,8 @@ async function composeView() {
     return;
   }
   shell(
-    `<div class="page-intro"><h1>编辑草稿</h1><p>整理说明和材料；「发送预览」只查看将要发送的内容。</p></div><div class="form-block compose-input"><textarea id="instruction" aria-label="补充说明" placeholder="补充说明，Enter 发送…" spellcheck="false">${esc(draft.instruction)}</textarea></div><div class="row between compose-tools"><select id="preset" aria-label="任务">${presetOptions(draft.preset)}</select><label class="text-button" for="file-input">${icon('plus', 15)} 添加文件</label></div><input type="file" id="file-input" multiple class="hidden"><div class="compose-materials">${items.map((item) => `<section class="preview"><div class="row between"><span class="list-title">${esc(item.title || '材料')}</span><button class="icon-button small" data-draft-remove="${item.id}" aria-label="移除材料">${icon('close', 14)}</button></div>${item.url ? `<div class="list-meta">${esc(item.url)}</div>` : ''}${item.warnings?.map((w) => `<div class="warning">${esc(w)}</div>`).join('') || ''}${item.markdown ? disclosure('正文', `<div class="markdown material-body">${renderMarkdown(item.markdown)}</div><button class="secondary" data-edit-material="${item.id}">${icon('file', 14)}编辑正文</button>`) : ''}${item.attachments.map((a, i) => `<div class="attachment">${icon('file', 15)}<span>${esc(a.name)}</span><small>${size(a.blob.size)}</small><button class="icon-button small" data-download="${item.id}:${i}" aria-label="下载附件">${icon('download', 14)}</button><button class="icon-button small" data-remove-attachment="${item.id}:${i}" aria-label="移除附件">${icon('close', 14)}</button></div>`).join('')}${item.attachments.some((a) => a.blob.type.startsWith('image/')) ? `<div id="image-${item.id}"></div>` : ''}</section>`).join('')}</div>`,
-    `<footer class="compose-footer"><button class="secondary" data-action="draft-basket">加入材料篮</button><button class="primary" id="send-button" data-action="send">发送 ${icon('send', 18)}</button></footer>`,
+    `<div class="page-intro"><h1>${esc(t('编辑草稿'))}</h1><p>${esc(t('整理说明和材料；「发送预览」只查看将要发送的内容。'))}</p></div><div class="form-block compose-input"><textarea id="instruction" aria-label="${esc(t('补充说明'))}" placeholder="${esc(t('补充说明，Enter 发送…'))}" spellcheck="false">${esc(draft.instruction)}</textarea></div><div class="row between compose-tools"><select id="preset" aria-label="${esc(t('任务'))}">${presetOptions(draft.preset)}</select><label class="text-button" for="file-input">${icon('plus', 15)} ${esc(t('添加文件'))}</label></div><input type="file" id="file-input" multiple class="hidden"><div class="compose-materials">${items.map((item) => `<section class="preview"><div class="row between"><span class="list-title">${esc(item.title || t('材料'))}</span><button class="icon-button small" data-draft-remove="${item.id}" aria-label="${esc(t('移除材料'))}">${icon('close', 14)}</button></div>${item.url ? `<div class="list-meta">${esc(item.url)}</div>` : ''}${item.warnings?.map((w) => `<div class="warning">${esc(w)}</div>`).join('') || ''}${item.markdown ? disclosure(t('正文'), `<div class="markdown material-body">${renderMarkdown(item.markdown)}</div><button class="secondary" data-edit-material="${item.id}">${icon('file', 14)}${esc(t('编辑正文'))}</button>`) : ''}${item.attachments.map((a, i) => `<div class="attachment">${icon('file', 15)}<span>${esc(a.name)}</span><small>${size(a.blob.size)}</small><button class="icon-button small" data-download="${item.id}:${i}" aria-label="${esc(t('下载附件'))}">${icon('download', 14)}</button><button class="icon-button small" data-remove-attachment="${item.id}:${i}" aria-label="${esc(t('移除附件'))}">${icon('close', 14)}</button></div>`).join('')}${item.attachments.some((a) => a.blob.type.startsWith('image/')) ? `<div id="image-${item.id}"></div>` : ''}</section>`).join('')}</div>`,
+    `<footer class="compose-footer"><button class="secondary" data-action="draft-basket">${esc(t('加入材料篮'))}</button><button class="primary" id="send-button" data-action="send">${esc(t('发送'))} ${icon('send', 18)}</button></footer>`,
   );
   bindComposer();
   if (draft.chooseBot) {
@@ -616,20 +741,20 @@ async function imageEditor(item, index) {
     URL.revokeObjectURL(url);
   }
   mountPoint.innerHTML = disclosure(
-    '编辑图片',
+    t('编辑图片'),
     `<div class="shot-tools">${[
-      ['crop', '裁剪'],
-      ['redact', '打码'],
-      ['arrow', '箭头'],
-      ['undo', '撤销'],
+      ['crop', t('裁剪')],
+      ['redact', t('打码')],
+      ['arrow', t('箭头')],
+      ['undo', t('撤销')],
     ]
       .map(
         ([i, t]) =>
-          `<button class="icon-button small ${i === 'crop' ? 'active' : ''}" data-tool="${i}" title="${t}" aria-label="${t}">${icon(i, 17)}</button>`,
+          `<button class="icon-button small ${i === 'crop' ? 'active' : ''}" data-tool="${i}" title="${esc(t)}" aria-label="${esc(t)}">${icon(i, 17)}</button>`,
       )
       .join(
         '',
-      )}<button class="text-button" data-apply="${item.id}">${draft.screenshotEdit ? '完成截图' : '应用修改'}</button></div><div class="canvas-wrap"><canvas aria-label="截图编辑区域"></canvas></div>`,
+      )}<button class="text-button" data-apply="${item.id}">${draft.screenshotEdit ? t('完成截图') : t('应用修改')}</button></div><div class="canvas-wrap"><canvas aria-label="${esc(t('截图编辑区域'))}"></canvas></div>`,
     { className: 'shot-editor', open: Boolean(draft.screenshotEdit) },
   );
   const canvas = mountPoint.querySelector('canvas'),
@@ -750,7 +875,7 @@ async function imageEditor(item, index) {
 async function sendDraft() {
   if (!draft || busy) return;
   if (draft.screenshotEdit) {
-    toast('请先完成截图');
+    toast(t('请先完成截图'));
     return;
   }
   busy = true;
@@ -758,7 +883,7 @@ async function sendDraft() {
   const button = document.querySelector('#send-button');
   if (button) {
     button.disabled = true;
-    button.textContent = '发送中…';
+    button.textContent = t('发送中…');
   }
   try {
     sendingDraft.instruction =
@@ -769,16 +894,16 @@ async function sendDraft() {
       view = 'history';
       draft = null;
       await refresh();
-    } else toast('已加入发送队列');
+    } else toast(t('已加入发送队列'));
   } finally {
     busy = false;
     if (button) button.disabled = false;
   }
 }
-function dialogElement(picker = false, label = '对话框') {
+function dialogElement(picker = false, label = t('对话框')) {
   const dialog = document.querySelector('#bot-dialog');
   releaseAvatars(dialog);
-  dialog.setAttribute('aria-label', picker ? '选择 BOT' : label);
+  dialog.setAttribute('aria-label', picker ? t('选择 BOT') : label);
   dialog.className = picker ? 'bot-picker' : 'content-dialog';
   return dialog;
 }
@@ -796,15 +921,16 @@ async function previewPacket() {
     maxAttachmentBytes: model.settings.maxAttachmentBytes,
   });
   if (draft !== previewDraft || view !== 'compose') return;
-  const dialog = dialogElement(false, '发送预览');
-  dialog.innerHTML = `<div class="dialog-head"><strong>发送预览</strong>${btn('close-dialog', '关闭', 'close')}</div><p class="page-description">以下是即将发给 ${esc(bot()?.name || 'BOT')} 的说明、正文与附件。此处仅预览，关闭后仍可修改草稿。</p><pre class="reply">${esc(packet.text)}</pre>${packet.attachments.map((a) => `<div class="attachment"><span>${esc(a.name)}</span><small>${size(a.blob.size)}</small></div>`).join('')}`;
+  const dialog = dialogElement(false, t('发送预览'));
+  dialog.dataset.localeKind = 'preview';
+  dialog.innerHTML = `<div class="dialog-head"><strong>${esc(t('发送预览'))}</strong>${btn('close-dialog', t('关闭'), 'close')}</div><p class="page-description">${esc(t('以下是即将发给 {name} 的说明、正文与附件。此处仅预览，关闭后仍可修改草稿。', { name: bot()?.name || 'BOT' }))}</p><pre class="reply">${esc(packet.text)}</pre>${packet.attachments.map((a) => `<div class="attachment"><span>${esc(a.name)}</span><small>${size(a.blob.size)}</small></div>`).join('')}`;
   dialog.showModal();
 }
 async function repliesView() {
   shell(
-    '<div id="replies-list" role="log" aria-label="聊天记录"></div>',
-    `<footer class="chat-footer"><div class="chat-composer"><textarea id="followup" aria-label="追问" placeholder="输入消息，继续对话…" rows="2"></textarea><div class="composer-actions"><span>Enter 发送 · Shift+Enter 换行</span><button class="primary" data-action="followup" aria-label="发送消息" disabled>${icon('send', 18)}</button></div></div></footer>`,
-    `<div class="chat-head"><div class="chat-context">BOT 对话<span>接收回复与继续追问</span></div><div id="stream-status" class="subtle" role="status"></div></div>`,
+    `<div id="replies-list" role="log" aria-label="${esc(t('聊天记录'))}"></div>`,
+    `<footer class="chat-footer"><div class="chat-composer"><textarea id="followup" aria-label="${esc(t('追问'))}" placeholder="${esc(t('输入消息，继续对话…'))}" rows="2"></textarea><div class="composer-actions"><span>${esc(t('Enter 发送 · Shift+Enter 换行'))}</span><button class="primary" data-action="followup" aria-label="${esc(t('发送消息'))}" disabled>${icon('send', 18)}</button></div></div></footer>`,
+    `<div class="chat-head"><div class="chat-context">${esc(t('BOT 对话'))}<span>${esc(t('接收回复与继续追问'))}</span></div><div id="stream-status" class="subtle" role="status"></div></div>`,
   );
   const input = document.querySelector('#followup');
   input.addEventListener('input', syncChatInput);
@@ -840,7 +966,7 @@ async function renderReplies() {
             `<article class="reply message"><div class="markdown">${renderMarkdown(r.text)}</div><div class="reply-time">${shortTime(r.updatedAt)}</div></article>`,
         )
         .join('')
-    : '<div class="empty">还没有收到回复</div>';
+    : `<div class="empty">${esc(t('还没有收到回复'))}</div>`;
   if (atBottom) scroller.scrollTop = scroller.scrollHeight;
 }
 function connectReplies() {
@@ -854,14 +980,14 @@ function connectReplies() {
   port.onMessage.addListener((message) => {
     const status = document.querySelector('#stream-status');
     if (message.type === 'error') {
-      if (status) status.textContent = errorText(message.error) + '，正在重连';
+      if (status) status.textContent = t('{error}，正在重连', { error: errorText(message.error) });
       return;
     }
     if (status) status.textContent = '';
     if (message.event?.type === 'entry.unavailable' && status)
-      status.textContent = '部分回复正文未由服务端返回';
+      status.textContent = t('部分回复正文未由服务端返回');
     if (message.event?.type === 'turn.failed' && status)
-      status.textContent = message.event.data.summary || 'BOT 执行失败';
+      status.textContent = message.event.data.summary || t('BOT 执行失败');
     if (
       ['message', 'message.deleted', 'reset', 'history', 'resync-required'].includes(
         message.event?.type,
@@ -885,7 +1011,8 @@ function connectReplies() {
 }
 async function pickBot(mode = 'current') {
   const dialog = dialogElement(true);
-  dialog.innerHTML = `<div class="dialog-head"><strong>选择 BOT</strong><div class="picker-header-actions"><button id="refresh-picker-bots" class="secondary" type="button">${icon('refresh', 16)}刷新 BOT</button>${btn('close-dialog', '关闭', 'close')}</div></div><div class="search-box">${icon('search', 17)}<input id="bot-search" placeholder="搜索 BOT" aria-label="搜索 BOT" autocomplete="off"></div><div id="bot-list" class="bot-list"></div>`;
+  dialog.dataset.pickerMode = mode;
+  dialog.innerHTML = `<div class="dialog-head"><strong>${esc(t('选择 BOT'))}</strong><div class="picker-header-actions"><button id="refresh-picker-bots" class="secondary" type="button">${icon('refresh', 16)}${esc(t('刷新 BOT'))}</button>${btn('close-dialog', t('关闭'), 'close')}</div></div><div class="search-box">${icon('search', 17)}<input id="bot-search" placeholder="${esc(t('搜索 BOT'))}" aria-label="${esc(t('搜索 BOT'))}" autocomplete="off"></div><div id="bot-list" class="bot-list"></div>`;
   const list = dialog.querySelector('#bot-list'),
     input = dialog.querySelector('input'),
     refreshButton = dialog.querySelector('#refresh-picker-bots');
@@ -902,10 +1029,10 @@ async function pickBot(mode = 'current') {
       ? filtered
           .map(
             (b) =>
-              `<div class="bot-row ${(mode === 'default' ? model.settings.defaultBotId : bot()?.id) === b.id ? 'is-selected' : ''}"><button class="bot-choice" data-select-bot="${esc(b.id)}" aria-label="${esc(b.name || 'BOT')}" aria-pressed="${(mode === 'default' ? model.settings.defaultBotId : bot()?.id) === b.id}">${avatar(b.id, true, 64)}<span class="name">${esc(b.name || 'BOT')}</span>${model.settings.defaultBotId === b.id ? '<span class="default-badge">默认</span>' : ''}</button><button class="favorite-button ${model.settings.favorites.includes(b.id) ? 'is-saved' : ''}" data-favorite="${esc(b.id)}" aria-pressed="${model.settings.favorites.includes(b.id)}" aria-label="${model.settings.favorites.includes(b.id) ? '取消收藏' : '收藏'} ${esc(b.name)}">${icon('bookmark', 14)}</button></div>`,
+              `<div class="bot-row ${(mode === 'default' ? model.settings.defaultBotId : bot()?.id) === b.id ? 'is-selected' : ''}"><button class="bot-choice" data-select-bot="${esc(b.id)}" aria-label="${esc(b.name || 'BOT')}" aria-pressed="${(mode === 'default' ? model.settings.defaultBotId : bot()?.id) === b.id}">${avatar(b.id, true, 64)}<span class="name">${esc(b.name || 'BOT')}</span>${model.settings.defaultBotId === b.id ? `<span class="default-badge">${esc(t('默认'))}</span>` : ''}</button><button class="favorite-button ${model.settings.favorites.includes(b.id) ? 'is-saved' : ''}" data-favorite="${esc(b.id)}" aria-pressed="${model.settings.favorites.includes(b.id)}" aria-label="${esc(model.settings.favorites.includes(b.id) ? t('取消收藏 {name}', { name: b.name }) : t('收藏 {name}', { name: b.name }))}">${icon('bookmark', 14)}</button></div>`,
           )
           .join('')
-      : '<div class="empty">没有匹配的 BOT</div>';
+      : `<div class="empty">${esc(t('没有匹配的 BOT'))}</div>`;
     for (const button of list.querySelectorAll('button')) button.disabled = refreshing;
     mountAvatars(dialog, model.bots);
   };
@@ -916,7 +1043,7 @@ async function pickBot(mode = 'current') {
       refreshing = true;
       refreshButton.disabled = true;
       refreshButton.setAttribute('aria-busy', 'true');
-      refreshButton.innerHTML = `${icon('refresh', 16)}刷新中…`;
+      refreshButton.innerHTML = `${icon('refresh', 16)}${esc(t('刷新中…'))}`;
       render();
       const accountId = model.account?.id,
         workspaceId = model.workspaceId;
@@ -935,12 +1062,12 @@ async function pickBot(mode = 'current') {
         model = next;
         rosterChanged = true;
         render();
-        toast('BOT 列表已刷新');
+        toast(t('BOT 列表已刷新'));
       } finally {
         refreshing = false;
         refreshButton.disabled = false;
         refreshButton.setAttribute('aria-busy', 'false');
-        refreshButton.innerHTML = `${icon('refresh', 16)}刷新 BOT`;
+        refreshButton.innerHTML = `${icon('refresh', 16)}${esc(t('刷新 BOT'))}`;
         if (dialog.isConnected && dialog.open) render();
       }
     }),
@@ -1006,7 +1133,7 @@ async function addFiles(files) {
   const newItems = [];
   for (const file of list) {
     if (file.size > model.settings.maxAttachmentBytes) {
-      toast(file.name + ' 超过大小上限');
+      toast(t('{name} 超过大小上限', { name: file.name }));
       continue;
     }
     const item = {
@@ -1027,14 +1154,14 @@ async function addFiles(files) {
       /\.(md|csv|json|txt|js|ts|py|html|xml|yaml|yml|log)$/i.test(file.name)
     ) {
       if (file.size <= 4 * 1024 * 1024) item.markdown = await file.text();
-      else item.warnings.push('文字文件较大，全文保留在附件中');
+      else item.warnings.push(t('文字文件较大，全文保留在附件中'));
     }
     await put('materials', item);
     if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name))
       try {
         await rpc('pdf.extract', { materialId: item.id, index: 0 });
       } catch {
-        item.warnings.push('PDF 文字提取失败，已保留原文件');
+        item.warnings.push(t('PDF 文字提取失败，已保留原文件'));
         await put('materials', item);
       }
     newItems.push(item);
@@ -1062,7 +1189,7 @@ async function download(itemId, index) {
 async function capture(kind, options = {}) {
   if (busy) return;
   busy = true;
-  toast('正在采集…');
+  toast(t('正在采集…'));
   try {
     if (
       model.settings.askBeforeSend &&
@@ -1079,7 +1206,7 @@ async function capture(kind, options = {}) {
       ...options,
     });
     if (result?.basket) {
-      toast('已加入材料篮');
+      toast(t('已加入材料篮'));
       await refresh();
     } else if (result?.jobId) {
       view = 'history';
@@ -1175,7 +1302,7 @@ async function act(action) {
       case 'bots-refresh':
         await rpc('bots.refresh');
         await refresh();
-        toast('BOT 已更新');
+        toast(t('BOT 已更新'));
         break;
       case 'resume-compose':
         await goToView('drafts');
@@ -1242,10 +1369,10 @@ async function act(action) {
           origins: ['http://*/*', 'https://*/*'],
         });
         if (!granted) {
-          toast('未获得跨网站访问权限');
+          toast(t('未获得跨网站访问权限'));
           return;
         }
-        toast('正在采集所选网页…');
+        toast(t('正在采集所选网页…'));
         await rpc('capture.tabs', { tabIds: ids });
         break;
       }
@@ -1253,13 +1380,14 @@ async function act(action) {
         const granted = await api.permissions.request({
           origins: ['http://*/*', 'https://*/*'],
         });
-        toast(granted ? '已授权跨网站采集' : '未获得权限');
+        toast(granted ? t('已授权跨网站采集') : t('未获得权限'));
         break;
       }
       case 'shortcuts': {
         if (isFirefox) {
-          const dialog = dialogElement(false, 'Firefox 快捷键设置');
-          dialog.innerHTML = `<div class="dialog-head"><strong>Firefox 快捷键设置</strong>${btn('close-dialog', '关闭', 'close')}</div><p class="page-description">在浏览器地址栏输入 <code>about:addons</code>，点击齿轮菜单，选择「管理扩展快捷键」，再找到 Grok Bot Clipper 修改快捷键。</p>`;
+          const dialog = dialogElement(false, t('Firefox 快捷键设置'));
+          dialog.dataset.localeKind = 'firefox-shortcuts';
+          dialog.innerHTML = `<div class="dialog-head"><strong>${esc(t('Firefox 快捷键设置'))}</strong>${btn('close-dialog', t('关闭'), 'close')}</div><p class="page-description">${esc(t('在浏览器地址栏输入 about:addons，点击齿轮菜单，选择「管理扩展快捷键」，再找到 Grok Bot Clipper 修改快捷键。'))}</p>`;
           dialog.showModal();
         } else await api.tabs.create({ url: shortcutsURL });
         break;
@@ -1295,7 +1423,7 @@ async function act(action) {
           await rpc('draft.send', { id: d.id });
           if (input.value.trim() === text) input.value = '';
           input.focus({ preventScroll: true });
-          toast('已加入发送队列');
+          toast(t('已加入发送队列'));
         } finally {
           busy = false;
           syncChatInput();
@@ -1349,12 +1477,12 @@ async function handleRootClick(e) {
       await navigator.clipboard.writeText(
         codeCopy.closest('.code-block').querySelector('code').textContent,
       );
-      codeCopy.textContent = '已复制';
+      codeCopy.textContent = t('已复制');
       setTimeout(() => {
-        if (codeCopy.isConnected) codeCopy.textContent = '复制';
+        if (codeCopy.isConnected) codeCopy.textContent = t('复制');
       }, 1500);
     } catch {
-      toast('无法复制，请选中代码后复制');
+      toast(t('无法复制，请选中代码后复制'));
     }
     return;
   }
@@ -1393,13 +1521,13 @@ async function handleRootClick(e) {
     if (check) {
       await rpc('job.check', { id: check.dataset.checkJob });
       await refresh();
-      toast('已检查投递状态');
+      toast(t('已检查投递状态'));
     }
     if (jobButton) {
       const job = await get('jobs', jobButton.dataset.openJob);
       if (job?.accountId !== model.account?.id) throw Error('ACCOUNT_CHANGED');
       const dialog = dialogElement(false, labels[job.state]);
-      dialog.innerHTML = `<div class="dialog-head"><strong>${labels[job.state]}</strong>${btn('close-dialog', '关闭', 'close')}</div><pre class="reply">${esc(job.packet.text)}</pre>${job.packet.attachments.map((a) => `<div class="attachment"><span>${esc(a.name)}</span><small>${size(a.blob.size)}</small></div>`).join('')}`;
+      dialog.innerHTML = `<div class="dialog-head"><strong>${esc(labels[job.state] || job.state)}</strong>${btn('close-dialog', t('关闭'), 'close')}</div><pre class="reply">${esc(job.packet.text)}</pre>${job.packet.attachments.map((a) => `<div class="attachment"><span>${esc(a.name)}</span><small>${size(a.blob.size)}</small></div>`).join('')}`;
       dialog.showModal();
     }
     const downloadBtn = e.target.closest('[data-download]');
@@ -1424,8 +1552,8 @@ async function handleRootClick(e) {
     const edit = e.target.closest('[data-edit-material]');
     if (edit) {
       const item = await get('materials', edit.dataset.editMaterial),
-        dialog = dialogElement(false, '编辑正文');
-      dialog.innerHTML = `<div class="dialog-head"><strong>编辑正文</strong>${btn('close-dialog', '关闭', 'close')}</div><textarea id="material-editor" style="min-height:300px;margin-top:15px" aria-label="材料正文">${esc(item.markdown)}</textarea><div class="bottom-actions"><button class="primary" id="save-material">保存</button></div>`;
+        dialog = dialogElement(false, t('编辑正文'));
+      dialog.innerHTML = `<div class="dialog-head"><strong>${esc(t('编辑正文'))}</strong>${btn('close-dialog', t('关闭'), 'close')}</div><textarea id="material-editor" style="min-height:300px;margin-top:15px" aria-label="${esc(t('材料正文'))}">${esc(item.markdown)}</textarea><div class="bottom-actions"><button class="primary" id="save-material">${esc(t('保存'))}</button></div>`;
       dialog.querySelector('#save-material').onclick = async () => {
         item.markdown = dialog.querySelector('textarea').value;
         await put('materials', item);
@@ -1464,7 +1592,7 @@ root.addEventListener('change', async (e) => {
         el.setAttribute('aria-invalid', 'true');
         if (error) {
           error.hidden = false;
-          error.textContent = `请输入 ${el.min}–${el.max} 之间的整数。`;
+          error.textContent = t('请输入 {min}–{max} 之间的整数。', { min: el.min, max: el.max });
         }
         return;
       }
@@ -1480,6 +1608,9 @@ root.addEventListener('change', async (e) => {
         value *= 1048576;
       }
       model.settings = await rpc('settings', { patch: { [key]: value } });
+      if (key === 'language') {
+        await rerenderForLocale();
+      }
       document.documentElement.dataset.theme = model.settings.theme;
       settingsSaved();
     }
@@ -1505,7 +1636,112 @@ root.addEventListener('change', async (e) => {
     toast(errorText(error));
   }
 });
+// Preserve user-owned input while rebuilding translated interface controls.
+async function rerenderForLocale() {
+  const active = document.activeElement;
+  const focusAttribute = ['data-action', 'data-select-bot', 'data-favorite', 'name'].find((name) =>
+    active?.hasAttribute(name),
+  );
+  const focus =
+    active && root.contains(active)
+      ? {
+          id: active.id,
+          tag: active.tagName,
+          attribute: focusAttribute,
+          value: focusAttribute && active.getAttribute(focusAttribute),
+          controlValue: active.value,
+          start: active.selectionStart,
+          end: active.selectionEnd,
+          direction: active.selectionDirection,
+        }
+      : null;
+  const followup = document.querySelector('#followup')?.value;
+  const dialog = document.querySelector('dialog[open]');
+  const picker = dialog?.classList.contains('bot-picker')
+    ? {
+        mode: dialog.dataset.pickerMode || 'current',
+        query: dialog.querySelector('#bot-search')?.value || '',
+      }
+    : null;
+  const title = dialog?.querySelector('.dialog-head strong');
+  // Only inspect extension chrome. Never reverse-translate material or BOT content.
+  const titleSource =
+    title && Object.entries(getCatalog()).find(([, text]) => text === title.textContent)?.[0];
+  const jobState =
+    title && Object.keys(labels).find((state) => labels[state] === title.textContent);
+  const scrolls = [...root.querySelectorAll('[id]')]
+    .filter((el) => el.scrollTop || el.scrollLeft)
+    .map((el) => ({ id: el.id, top: el.scrollTop, left: el.scrollLeft }));
+  await renderCurrent();
+  if (followup !== undefined) {
+    const input = document.querySelector('#followup');
+    if (input) {
+      input.value = followup;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+  if (picker) {
+    await pickBot(picker.mode);
+    const input = document.querySelector('#bot-search');
+    if (input) {
+      input.value = picker.query;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  } else if (dialog) {
+    // Keeping this node also preserves pending editor changes and its event handlers.
+    dialog.removeAttribute('open');
+    root.querySelector('#bot-dialog')?.replaceWith(dialog);
+    if (titleSource) title.textContent = t(titleSource);
+    else if (jobState) title.textContent = labels[jobState];
+    for (const close of dialog.querySelectorAll('[data-action="close-dialog"]')) {
+      close.title = t('关闭');
+      close.setAttribute('aria-label', t('关闭'));
+    }
+    const editor = dialog.querySelector('#material-editor');
+    if (editor) {
+      editor.setAttribute('aria-label', t('材料正文'));
+      dialog.querySelector('#save-material').textContent = t('保存');
+    }
+    if (dialog.dataset.localeKind === 'preview')
+      dialog.querySelector('.page-description').textContent = t(
+        '以下是即将发给 {name} 的说明、正文与附件。此处仅预览，关闭后仍可修改草稿。',
+        { name: bot()?.name || 'BOT' },
+      );
+    if (dialog.dataset.localeKind === 'firefox-shortcuts')
+      dialog.querySelector('.page-description').textContent = t(
+        '在浏览器地址栏输入 about:addons，点击齿轮菜单，选择「管理扩展快捷键」，再找到 Grok Bot Clipper 修改快捷键。',
+      );
+    dialog.showModal();
+  }
+  for (const scroll of scrolls) {
+    const el = document.getElementById(scroll.id);
+    if (el) {
+      el.scrollTop = scroll.top;
+      el.scrollLeft = scroll.left;
+    }
+  }
+  const target =
+    focus &&
+    (focus.id
+      ? document.getElementById(focus.id)
+      : focus.attribute &&
+        [...root.querySelectorAll(focus.tag)].find(
+          (el) =>
+            el.getAttribute(focus.attribute) === focus.value &&
+            (focus.attribute !== 'name' || el.value === focus.controlValue),
+        ));
+  if (target) {
+    target.focus({ preventScroll: true });
+    if (typeof focus.start === 'number' && typeof target.setSelectionRange === 'function')
+      target.setSelectionRange(focus.start, focus.end, focus.direction || 'none');
+  }
+}
 async function renderCurrent() {
+  await initI18n({ api, locale: model.settings.language || 'auto', document });
+  setLocale(model.settings.language || 'auto');
+  document.documentElement.lang = getLocale().replace('_', '-');
+  document.documentElement.dir =
+    supportedLocales.find((locale) => locale.code === getLocale())?.dir || 'ltr';
   if (view !== 'replies') {
     port?.disconnect();
     port = null;
@@ -1551,8 +1787,10 @@ async function renderCurrent() {
   }
 }
 async function refresh() {
+  const previousLanguage = model.settings.language;
   model = await rpc('state');
-  await renderCurrent();
+  if (previousLanguage !== model.settings.language) await rerenderForLocale();
+  else await renderCurrent();
   if (model.lastError) toast(errorText(model.lastError));
 }
 api.runtime.onMessage.addListener((message) => {
@@ -1591,6 +1829,9 @@ api.runtime.onMessage.addListener((message) => {
           selectedBotId = '';
           model = next;
           await renderCurrent();
+        } else if (next.settings.language !== model.settings.language) {
+          model.settings = next.settings;
+          await rerenderForLocale();
         }
       })
       .catch(() => {});
@@ -1614,6 +1855,7 @@ window.addEventListener('pagehide', () => {
   port?.disconnect();
 });
 try {
+  await initI18n({ api, document });
   shortcuts = await api.commands.getAll();
   const target = await rpc('capture.target').catch(() => null);
   sourceTabId = Number(q.get('source')) || target?.id;
