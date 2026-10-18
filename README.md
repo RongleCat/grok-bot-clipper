@@ -1,11 +1,6 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/avatars-row-dark.png" />
-    <img src="assets/avatars-row.png" alt="Five Grok Bot avatars: orange cloud, violet teardrop, black circle, green hexagon and blue rounded square." width="800" />
-  </picture>
+  <img src="assets/banner.png" alt="Grok Bot Clipper — Capture · Collect · Send. Five Grok Bot avatars in orange, violet, black, green and blue." width="960" />
 </p>
-
-<h1 align="center">Grok Bot Clipper</h1>
 
 <p align="center"><strong>Good things on the web. Straight to your BOT.</strong></p>
 <p align="center"><em>Web clipping · Screenshots & files · Social sharing · Material basket · BOT conversations</em></p>
