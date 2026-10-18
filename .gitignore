@@ -1,0 +1,13 @@
+node_modules/
+dist/
+artifacts/
+*.zip
+.DS_Store
+dist-firefox/
+*.xpi
+
+# Local conversation notes are not part of the public source.
+/session.txt
+.env
+.env.*
+!.env.example

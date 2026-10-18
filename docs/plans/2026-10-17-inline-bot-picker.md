@@ -1,0 +1,18 @@
+# Inline BOT picker implementation plan
+
+**Goal:** Replace web-share chooser windows with a compact, consistent embedded picker containing search and all BOTs.
+
+**Architecture:** Reuse the extension-origin `share.html` inside a small iframe anchored in the source webpage. This isolates page styles and keeps BOT RPC and account checks in the extension context. Capture stores the existing account-bound request and returns its ID instead of opening a window when the content script requests embedding. Preserve the standalone route for existing requests and compatibility. The embedded picker sends on BOT click; if ask-before-send is enabled, the same small panel switches to the existing instruction/confirmation step. Keep a compact refresh icon from the previously requested synchronization feature. Outside click/Escape and successful queueing close the frame. Frame messages are accepted only from the exact frame/window and extension origin.
+
+**Tech stack:** Existing JS, extension iframe, CSS, native animated avatars, Chrome MV3/Firefox MV2.
+
+1. Add failing service tests for embedded capture returning a request ID without opening windows or downloading, preserving source-tab ownership/account fencing/idempotency. Implement optional embedded request mode; bind embedded state/send to its original tab.
+2. Add failing content UI tests for embedding on all social chooser paths, dismissal, bounded size, source-checked close/resize messages. Implement the embedded frame host in the social UI, and expose only share.html via manifest web-accessible resources on supported sites.
+3. Add failing compact share UI tests for all-BOT search, click-to-send, duplicate protection, retry, refresh, optional instruction step and Firefox namespace. Add compact layout to existing share.js/share.css without changing legacy standalone behavior.
+4. Run focused tests and full suite; build/package Chrome and Firefox, lint Firefox, inspect the produced compact page screenshot if local rendering is available. Update version/docs and save the completed work. Real-site browser connection has been unavailable; distinguish fixture validation from live-site verification.
+
+Completed in 0.3.4. The webpage chooser is a 360px extension iframe inside an isolated shadow host with bounded height and top-layer positioning. Search lists all BOTs in a flat four-column grid; BOT click queues immediately unless supplementary instructions are enabled. Refresh and close remain compact icon controls. Legacy standalone requests remain supported, but all current webpage captures request embedding. The frame exposes no share credentials to page code; queued/resize/close messages require the exact frame, extension origin and request ID. Embedded state/send are fenced to the source tab, with existing account/workspace validation and idempotency preserved.
+
+Validation: 165 tests pass, including service ownership, background iframe sender, compact click-to-send/search/instruction flow, Firefox namespace, host message/dismissal handling and WAR conversion. Chrome and Firefox packages build successfully. Firefox lint: 0 errors, 0 notices, 31 pre-existing warnings. Read-only code review found no blocking issues. A separate headless Chrome fixture verified the actual compact CSS/animated-avatar rendering inside an iframe (`artifacts/inline-bot-picker-0.3.4.png`); this is not a live X/Douyin/WeChat/XHS verification. Real-site browser control remains unavailable.
+
+Manifest resource formats were checked against [MDN web_accessible_resources](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/web_accessible_resources): Chrome MV3 limits the exposed share document to supported sites; Firefox MV2 uses the corresponding resource list.

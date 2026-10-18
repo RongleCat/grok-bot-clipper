@@ -1,0 +1,17 @@
+# Native sharing and standalone BOT picker
+
+User-approved behavior: primary and saved BOTs appear as native recipients; Douyin includes every saved BOT, readable native text and a persistent chooser row below the recipient list. Full BOT selection uses a standalone extension HTML/CSS popup window, never sidePanel. WeChat author row shows the selected BOT avatar/name plus a separate dropdown. X submenu opens laterally. With askBeforeSend disabled, selecting a BOT sends immediately, even when capture has warnings; missing media stays explicit in the sent context. No materials-ready intermediate notice.
+
+Evidence: recipientArea's one-child fallback can match a nested first-friend wrapper; name color is copied from an unstyled row rather than its native text. social.capture forces draft confirmation for any warning, and openComposer attempts sidePanel.open after media downloads, losing the user gesture and falling back to a second materials-ready notice.
+
+Implementation:
+
+1. Reproduce nested Douyin markup and native label colors; require repeated full recipient rows before singleton fallback. Keep chooser outside the scrolling list and preserve native controls.
+2. Add a social sharing service with scoped session-backed picker requests, independent popup creation, explicit-confirm sending and duplicate-send protection. Test default/favorite discovery, warnings with direct sends, unselected picker, account/workspace changes, and confirmation idempotence.
+3. Add share.html + share.css + share.js with native animated BOT grid/search, primary/favorites/all groups, source summary, optional instruction, send button and visible progress/errors. Background owns captured post and does not accept arbitrary page-provided BOT targets from the picker window.
+4. Wire webpage entrypoints: chooser opens popup; WeChat split avatar/name/caret action; X lateral submenu; clicks are guarded against duplicates and menus surviving React updates.
+5. Replace old composer-notice fallback with opening an actual independent editor window when sidebar opening fails. Remove the materials-ready button flow. Build/test/review/commit; do not claim live website validation while browser control is unavailable.
+
+Validation: build succeeds and all 108 tests pass. New coverage includes actual background popup routing without sidePanel access; all saved BOTs in storage order; nested Douyin first-friend markup, readable native name color and separate footer chooser; WeChat selected avatar/name and dropdown targeting; X lateral positioning; duplicate click suppression; standalone popup search, groups, instruction toggle, confirmation and errors; direct enqueue despite capture warnings; account/workspace/generation changes during material saving; editor-window fallback when Chrome rejects a sidebar gesture. Scoped requests survive background restarts in session storage; stable draft IDs and transactional claims prevent a confirmed picker request from sending twice.
+
+Review identified an identity change window after saving media. The service now revalidates after storage and carries the original identity through draft creation and enqueue. The new popup includes standalone HTML/CSS/JS and uses the existing native animated avatar component. No messages were sent to real BOTs during verification. Live website visual acceptance remains unverified because browser control is unavailable. Reload the unpacked extension and refresh the platform pages; reloading an extension alone does not replace already injected scripts in open pages.

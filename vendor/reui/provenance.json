@@ -1,0 +1,85 @@
+{
+  "retrieved": "2026-10-17",
+  "adaptation": "Semantic HTML and vanilla CSS adapters in src/ui/components.js and public/style.css; reference TSX is not bundled.",
+  "components": [
+    {
+      "name": "c-button-1",
+      "registry": "https://reui.io/r/c-button-1.json",
+      "dependencies": [
+        "button"
+      ]
+    },
+    {
+      "name": "c-field-1",
+      "registry": "https://reui.io/r/c-field-1.json",
+      "dependencies": [
+        "field",
+        "input",
+        "input-group"
+      ]
+    },
+    {
+      "name": "c-card-1",
+      "registry": "https://reui.io/r/c-card-1.json",
+      "dependencies": [
+        "button",
+        "card"
+      ]
+    },
+    {
+      "name": "c-collapsible-1",
+      "registry": "https://reui.io/r/c-collapsible-1.json",
+      "dependencies": [
+        "@reui/badge",
+        "button",
+        "collapsible"
+      ]
+    },
+    {
+      "name": "c-input-group-20",
+      "registry": "https://reui.io/r/c-input-group-20.json",
+      "dependencies": [
+        "field",
+        "input-group"
+      ]
+    },
+    {
+      "name": "c-message-1",
+      "registry": "https://reui.io/r/c-message-1.json",
+      "dependencies": [
+        "bubble",
+        "message"
+      ]
+    },
+    {
+      "name": "c-switch-1",
+      "registry": "https://reui.io/r/c-switch-1.json",
+      "dependencies": [
+        "field",
+        "switch"
+      ]
+    },
+    {
+      "name": "c-attachment-1",
+      "registry": "https://reui.io/r/c-attachment-1.json",
+      "dependencies": [
+        "attachment"
+      ]
+    },
+    {
+      "name": "c-empty-1",
+      "registry": "https://reui.io/r/c-empty-1.json",
+      "dependencies": [
+        "button",
+        "empty"
+      ]
+    },
+    {
+      "name": "c-scroll-area-1",
+      "registry": "https://reui.io/r/c-scroll-area-1.json",
+      "dependencies": [
+        "scroll-area"
+      ]
+    }
+  ]
+}

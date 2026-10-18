@@ -1,0 +1,53 @@
+{
+  "name": "grok-bot-clipper",
+  "version": "0.3.10",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "package": "npm run build && node scripts/package.mjs",
+    "test:fixture": "node test/fixture-server.mjs",
+    "format": "prettier --write src test scripts public manifest.json package.json docs README.md",
+    "build:firefox": "node scripts/build.mjs firefox",
+    "package:firefox": "npm run build:firefox && node scripts/package.mjs firefox",
+    "lint:firefox": "web-ext lint --source-dir dist-firefox --ignore-files \"*.map\" build-meta.json"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^1.0.11",
+    "acorn": "^8.19.0",
+    "esbuild": "^0.25.0",
+    "eslint-scope": "^9.1.2",
+    "fake-indexeddb": "^6.2.6",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.10",
+    "sharp": "^0.35.5",
+    "web-ext": "^10.8.0"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "dompurify": "^3.4.17",
+    "highlight.js": "^11.12.0",
+    "lucide": "^1.58.0",
+    "marked": "^18.1.1",
+    "pdfjs-dist": "^6.4.299",
+    "pinyin-pro": "3.29.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "turndown": "^7.2.0"
+  },
+  "description": "Unofficial browser extension to capture, collect and send web context to Grok Bot.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "铁柱AGI (https://x.com/cgnot996)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RongleCat/grok-bot-clipper.git"
+  },
+  "homepage": "https://bot.tiezhu.si/",
+  "bugs": {
+    "url": "https://github.com/RongleCat/grok-bot-clipper/issues"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

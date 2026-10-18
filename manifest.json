@@ -1,0 +1,143 @@
+{
+  "manifest_version": 3,
+  "name": "Grok Bot Clipper",
+  "version": "0.3.10",
+  "description": "Grok Bot 的第三方浏览器扩展：采集网页、图片、截图与视频，整理上下文并发送给你的 BOT。",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "activeTab",
+    "scripting",
+    "alarms",
+    "offscreen",
+    "sidePanel",
+    "pageCapture",
+    "downloads",
+    "unlimitedStorage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://api2.cursor.sh/*",
+    "https://*.cursorvm.com/*",
+    "https://*.amazonaws.com/*",
+    "https://*.r2.cloudflarestorage.com/*",
+    "https://x.com/*",
+    "https://*.x.com/*",
+    "https://twitter.com/*",
+    "https://*.twitter.com/*",
+    "https://www.xiaohongshu.com/*",
+    "https://www.douyin.com/*",
+    "https://mp.weixin.qq.com/*",
+    "http://mp.weixin.qq.com/*",
+    "https://pbs.twimg.com/*",
+    "https://video.twimg.com/*",
+    "https://*.xhscdn.com/*",
+    "https://*.douyinvod.com/*",
+    "https://*.byteimg.com/*",
+    "https://*.bytecdn.cn/*",
+    "https://*.ibytedtos.com/*",
+    "https://*.pstatp.com/*",
+    "https://*.snssdk.com/*",
+    "https://mmbiz.qpic.cn/*",
+    "https://mmbiz.qlogo.cn/*"
+  ],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Grok Bot Clipper",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png",
+      "48": "icons/48.png",
+      "128": "icons/128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "options_ui": {
+    "page": "app.html?view=settings",
+    "open_in_tab": true
+  },
+  "commands": {
+    "capture-region": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+7",
+        "mac": "Command+Shift+7"
+      },
+      "description": "框选截图并发送给 BOT"
+    },
+    "send-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+8",
+        "mac": "Command+Shift+8"
+      },
+      "description": "保存网页并发送给 BOT"
+    },
+    "quick-command": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+9",
+        "mac": "Command+Shift+9"
+      },
+      "description": "打开快捷命令"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none';"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://*.x.com/*",
+        "https://twitter.com/*",
+        "https://*.twitter.com/*",
+        "https://www.xiaohongshu.com/*",
+        "https://www.douyin.com/*"
+      ],
+      "js": ["social-network.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://*.x.com/*",
+        "https://twitter.com/*",
+        "https://*.twitter.com/*",
+        "https://www.xiaohongshu.com/*",
+        "https://www.douyin.com/*",
+        "https://mp.weixin.qq.com/*",
+        "http://mp.weixin.qq.com/*"
+      ],
+      "js": ["social-ui.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["share.html"],
+      "matches": [
+        "https://x.com/*",
+        "https://*.x.com/*",
+        "https://twitter.com/*",
+        "https://*.twitter.com/*",
+        "https://www.xiaohongshu.com/*",
+        "https://www.douyin.com/*",
+        "https://mp.weixin.qq.com/*",
+        "http://mp.weixin.qq.com/*"
+      ]
+    }
+  ]
+}

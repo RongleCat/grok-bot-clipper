@@ -1,0 +1,14 @@
+{
+  "appVersion": "0.70.2",
+  "asset": "index.eager-platform-DKZJbDqM.js",
+  "sourceSHA256": "e9374e46362df4c5d3787441f83d8341c19ee4380939eb911b31380e89789dc9",
+  "declarations": 657,
+  "engineSHA256": "a9b18a2c08d0a12468fc7b891205274312b56f09e31c8a23914a117c1b56e686",
+  "exports": {
+    "AvatarMark": "KN",
+    "toBody": "YN",
+    "renderStill": "aP",
+    "appearance": "sP",
+    "createAvatarEngine": "ih"
+  }
+}
